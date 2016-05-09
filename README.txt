@@ -3,7 +3,8 @@ SYSC 3303 Term Project
 
 
 *************************************************************
-* Authors: Adnan Hajar, Benjamin Tobalt,                    *
+* 	Team 5						    * 
+*	Authors: Adnan Hajar, Benjamin Tobalt,              *
 *          Luke Sanderson , Owen Lee,                       * 
 *          Xia Qiyang                                       * 
 *    Date: May 9 2016                                       * 
@@ -31,8 +32,16 @@ ERRSIM.java
 ------------------
 	 Intermediate host that connects to client and passes on packets (client to server, and server to
 	 client).
+	 
 	
 
 To Run Program
 ---------------
 1) 
+
+
+NOTES TO COMPLETE:
+-Mention directory in server side.
+-specify where client stores and receives
+-size of files accepted
+-test bytes
