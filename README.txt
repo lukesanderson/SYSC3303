@@ -40,11 +40,11 @@ Steps to run program:
  	typing "Q" will quit the client, but will not affect the server
  	typing the file name will select the file to transfer
  6) When selecting a file, a full file name must be inputted or else it will not correctly find the file
- 		eg "M"
+ 		e.g. "***********"
  7) On the server, typing "Q" will attempt to gracefully shutdown the file transfer, letting current transfers to be completed, while preventing new transfers, after which it will shutdown
- 8) The client stores files in "" and receives files in ""
- 9) The server directory is
- 10) The max amount of bytes per file accepted is 694358345934 bytes, but the block will only hold 512 bytes in each packet.
+ 8) The client stores files in "**********" and receives files in "***********"
+ 9) The server directory is ***************
+ 10) The max amount of bytes per file accepted is ************* bytes, but the block will only hold 512 bytes in each packet.
  11) The min amount of bytes per files is anything greater than 0 because the file must exist, however the server can send back 0 bytes if a multiple of 512 and the transfer has been completed.
  
  Bytes to be tested:
