@@ -27,6 +27,7 @@ NOTES:
 port 69 must be implemented. 
 -Modifications to the file selection can be made so it searches in the current directory, instead of typing the full file path.
 -A verbose/quiet mode still needs to be implemented.
+-Proper directories for the server and client need to be made.
 
 
 
@@ -35,7 +36,6 @@ Steps to run program:
  1) Run ERRSIM.java
  2) Run Server.java
  3) Run TFTPClient.java
- 
  4) On the client, use the console user interface to send requests
  5) When prompted on the client by the console,
  	typing "R" will select a read request
@@ -48,15 +48,15 @@ Steps to run program:
  
  Directory and Files sizes:
  -------------------------
- 8) The client stores files and receives files in the current project workspace, so wherever the files are running from.
- 9) The server directory also is the current project workspace, future modifications will be made so that the client and server do not share the same directory.
- 10) The max amount of bytes per file accepted is 65535 bytes, but the block will only hold 512 bytes in each packet. 
- 11) The min amount of bytes per files is anything greater than 0 because the file must exist, however the server can send back 0 bytes if a multiple of 512 and the transfer has been completed.
+ 1) The client stores files and receives files in the current project workspace, so wherever the files are running from.
+ 2) The server directory also is the current project workspace, future modifications will be made so that the client and server do not share the same directory.
+ 3) The max amount of bytes per file accepted is 65535 bytes, but the block will only hold 512 bytes in each packet. 
+ 4) The min amount of bytes per files is anything greater than 0 because the file must exist, however the server can send back 0 bytes if a multiple of 512 and the transfer has been completed.
  
  Bytes to be tested:
- 	0
- 	1
- 	512
+ 	0 (tested)
+ 	1 (tested)
+ 	512 
  	513
  	511
  	1024
