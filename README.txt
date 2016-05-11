@@ -7,7 +7,7 @@ SYSC 3303 Term Project
 *	Authors: Adnan Hajar, Benjamin Tobalt,              *
 *          Luke Sanderson , Owen Lee,                       * 
 *          Xia Qiyang                                       * 
-*    Date: May 9 2016                                       * 
+*    Date: May 10 2016                                      * 
 *    Iteration: 1                                           *
 *                                                           *
 *                Sysc 3303 term Project                     *
@@ -18,14 +18,17 @@ Description:
 This project is a file transfer system based on the TFTP specification (RFC 1350). The
 current iteration (1) implements a file transfer between a TFTP client and server, and passes through a error simulator.
 The error simulator currently produces no errors, and only passes data between the client and server.
-Below is the explanation on how to properly run the Client/Server system. For the purposes of this project, the mode has been
-permanently assigned to "netascii", and will not be prompted for by the user.
+Below is the explanation on how to properly run the Client/Server system. For the purposes of this project, 
+the mode has been permanently assigned to "netascii", and will not be prompted for by the user.
 
 
 NOTES:
 -Sockets do not have timeouts implemented yet. A timeout on client could be implemented, but a timeout on
 port 69 must be implemented. 
 -Modifications to the file selection can be made so it searches in the current directory, instead of typing the full file path.
+-A verbose/quiet mode still needs to be implemented.
+
+
 
 Steps to run program:
 -----------------
@@ -40,8 +43,11 @@ Steps to run program:
  	typing "Q" will quit the client, but will not affect the server
  	typing the file name will select the file to transfer
  6) When selecting a file, a full file name must be inputted or else it will not correctly find the file
- 		e.g. "***********"
+ 		e.g. "***********" will be accepted. "README.TXT" will not.
  7) On the server, typing "Q" will attempt to gracefully shutdown the file transfer, letting current transfers to be completed, while preventing new transfers, after which it will shutdown
+ 
+ Directory and Files sizes:
+ -------------------------
  8) The client stores files in "**********" and receives files in "***********"
  9) The server directory is ***************
  10) The max amount of bytes per file accepted is ************* bytes, but the block will only hold 512 bytes in each packet.
@@ -55,13 +61,6 @@ Steps to run program:
  	511
  	1024
  	
- 
- NOTES TO COMPLETE:
--Mention directory in server side.
--specify where client stores and receives
--size of files accepted
--test bytes
- 
  UML:
  ------------
  Five UML diagrams have been included with this project. One being the class diagram of the current system, and the other four being WRQ/RRQ steady state and initization UCM diagrams. In future iterations the UCM diagrams for the WRQ and RRQ can be combined into one diagram each, with the alternate flows being demonstrated with a different colour/style lines.
