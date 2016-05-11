@@ -43,14 +43,14 @@ Steps to run program:
  	typing "Q" will quit the client, but will not affect the server
  	typing the file name will select the file to transfer
  6) When selecting a file, a full file name must be inputted or else it will not correctly find the file
- 		e.g. "***********" will be accepted. "README.TXT" will not.
+ 		e.g. "M:\main.c" will be accepted. "README.TXT" will not. A directory must be fully specified.
  7) On the server, typing "Q" will attempt to gracefully shutdown the file transfer, letting current transfers to be completed, while preventing new transfers, after which it will shutdown
  
  Directory and Files sizes:
  -------------------------
- 8) The client stores files in "**********" and receives files in "***********"
- 9) The server directory is ***************
- 10) The max amount of bytes per file accepted is ************* bytes, but the block will only hold 512 bytes in each packet.
+ 8) The client stores files and receives files in the current project workspace, so wherever the files are running from.
+ 9) The server directory also is the current project workspace, future modifications will be made so that the client and server do not share the same directory.
+ 10) The max amount of bytes per file accepted is 65535 bytes, but the block will only hold 512 bytes in each packet. 
  11) The min amount of bytes per files is anything greater than 0 because the file must exist, however the server can send back 0 bytes if a multiple of 512 and the transfer has been completed.
  
  Bytes to be tested:
