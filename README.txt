@@ -63,7 +63,9 @@ Steps to run program:
  	
  UML:
  ------------
- Five UML diagrams have been included with this project. One being the class diagram of the current system, and the other four being WRQ/RRQ steady state and initization UCM diagrams. In future iterations the UCM diagrams for the WRQ and RRQ can be combined into one diagram each, with the alternate flows being demonstrated with a different colour/style lines.
+ Five UML diagrams have been included with this project. One being the class diagram of the current system, and the other
+ four being WRQ/RRQ steady state and initization UCM diagrams. In future iterations the UCM diagrams for the WRQ and RRQ can
+ be combined into one diagram each, with the alternate flows being demonstrated with a different colour/style lines.
 
 Server.java
 ----------------
