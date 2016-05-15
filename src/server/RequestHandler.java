@@ -1,12 +1,15 @@
 package server;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.util.ArrayList;
 
 public class RequestHandler implements Runnable {
 
@@ -14,7 +17,11 @@ public class RequestHandler implements Runnable {
 	private Server parentServer;
 	private DatagramSocket inOutSocket;
 
-	private static final String DEFAULT_DIRECTORY = "A:\\School\\Current Semester\\Sysc 3303\\Project\\SYSC3303_TFTP\\src\\server\\";
+	private boolean transfering = true;
+
+	private static final String SERVER_DIRECTORY = "A:\\School\\Current Semester\\Sysc 3303\\Project\\SYSC3303_TFTP\\src\\server\\";
+	private static final int PACKET_SIZE = 516;
+	private static final int DATA_SIZE = 512;
 
 	public RequestHandler(DatagramPacket request, Server parent) {
 		this.request = request;
@@ -54,10 +61,11 @@ public class RequestHandler implements Runnable {
 	private void readRequest() {
 
 		String filename = getFileName(request.getData());
+
 		BufferedInputStream in = null;
 		try {
-			System.out.println(DEFAULT_DIRECTORY + filename);
-			in = new BufferedInputStream(new FileInputStream(DEFAULT_DIRECTORY + filename));
+			System.out.println(SERVER_DIRECTORY + filename);
+			in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
 
 			byte[] g = new byte[1000];
 			in.read(g);
@@ -76,10 +84,85 @@ public class RequestHandler implements Runnable {
 
 	}
 
-	private void writeRequest() {
+	private void writeRequest() throws IOException {
 
 		String filename = getFileName(request.getData());
+		ArrayList<byte[]> dataBlocks = new ArrayList<byte[]>();
 
+		byte[] incomingData = new byte[PACKET_SIZE];
+
+		DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length);
+
+		int expectedBlockNumber = 0;
+
+		do {
+
+			inOutSocket.receive(incomingPacket);
+			if (!validate(incomingPacket.getData())) {
+				// catching unexpected packet
+			}
+			incomingData = incomingPacket.getData();
+			int blockNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
+
+			if (blockNumber != expectedBlockNumber) {
+				// handle error
+			}
+
+			// save block
+			dataBlocks.add(incomingData);
+
+			// Build ack
+			DatagramPacket ackPack = buildAckPacket(blockNumber);
+			inOutSocket.send(ackPack);
+
+		} while (transfering);
+		// transfer complete
+
+		BufferedOutputStream fileWriter = new BufferedOutputStream(new FileOutputStream(SERVER_DIRECTORY + filename));
+
+		// write to file
+		for (byte[] block : dataBlocks) {
+			fileWriter.write(block);
+		}
+
+		fileWriter.close();
+
+	}
+
+	/**
+	 * Validates the data packet. If the packet's data is less than 512 bytes,
+	 * TRANSFERING is set to false.
+	 * 
+	 * @param data
+	 * @return false if the packet is not a data packet
+	 */
+	private boolean validate(byte[] data) {
+		if (data[1] != (byte) 3) {
+			// this is not a data packet
+			return false;
+		} else if (data[data.length - 1] == (byte) 0) {
+			// end of transfer
+			transfering = false;
+			return true;
+		}
+
+		return false;
+	}
+
+	private DatagramPacket buildAckPacket(int blockNumber) {
+		byte[] data = new byte[4];
+
+		data[0] = 0;
+		data[1] = 4;
+		data[2] = (byte) (blockNumber & 0xFF);
+		data[3] = (byte) ((blockNumber >> 8) & 0xFF);
+
+		DatagramPacket ackPack = new DatagramPacket(data, data.length);
+
+		ackPack.setAddress(request.getAddress());
+		ackPack.setPort(request.getPort());
+
+		return ackPack;
 	}
 
 	@Override
@@ -94,7 +177,12 @@ public class RequestHandler implements Runnable {
 
 		// Write
 		else if (data[0] == (byte) 0 && data[1] == (byte) 2) {
-			writeRequest();
+			try {
+				writeRequest();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		// Unexpected opcode for request
