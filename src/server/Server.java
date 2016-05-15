@@ -8,7 +8,6 @@ public class Server {
 
 	private Scanner input = new Scanner(System.in);
 
-	private DatagramSocket socket;
 	private Listener requestListener;
 
 	private int threadCount;

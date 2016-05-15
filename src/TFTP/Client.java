@@ -74,7 +74,7 @@ public class Client {
 
 		Client cli = new Client();
 
-		byte[] fileName = "test.txt".getBytes();
+		byte[] fileName = "owen.txt".getBytes();
 		byte[] text = "octet".getBytes();
 
 		// Create data for read and write in byte arrays
@@ -90,7 +90,7 @@ public class Client {
 		
 		
 		
-		cli.send(writeData);
+		cli.send(readData);
 		
 
 //		// Send 10 read and write requests and one invalid request
