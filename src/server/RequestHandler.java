@@ -85,21 +85,26 @@ public class RequestHandler implements Runnable {
 	}
 
 	private void writeRequest() throws IOException {
-
+		System.out.println("handling write request");
 		String filename = getFileName(request.getData());
 		ArrayList<byte[]> dataBlocks = new ArrayList<byte[]>();
 
 		byte[] incomingData = new byte[PACKET_SIZE];
 
 		DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length);
-
+		DatagramPacket ackPacket = buildAckPacket(0);
+		
+		inOutSocket.send(ackPacket);
+		
 		int expectedBlockNumber = 0;
 
 		do {
 
+			System.out.println("receiving first data packet");
 			inOutSocket.receive(incomingPacket);
 			if (!validate(incomingPacket.getData())) {
-				// catching unexpected packet
+				System.out.println("unexpected");
+				break;
 			}
 			incomingData = incomingPacket.getData();
 			int blockNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
