@@ -4,15 +4,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.ArrayList;
 
 public class RequestHandler implements Runnable {
 
@@ -45,12 +42,12 @@ public class RequestHandler implements Runnable {
 
 	}
 
-	private DatagramPacket buildDataPacket(byte[] data) {
-
-		return null;
-
-	}
-
+	/**
+	 * Extracts the filename from the data in a request packet
+	 * 
+	 * @param data
+	 * @return filename in request packet
+	 */
 	private String getFileName(byte[] data) {
 
 		String filename = "";
@@ -63,40 +60,73 @@ public class RequestHandler implements Runnable {
 			char g = (char) data[i];
 			filename += g;
 		}
-
 		return filename;
 	}
 
-	private void readRequest() {
+	/**
+	 * Handles a read request
+	 * 
+	 * @throws IOException
+	 */
+	private void readRequest() throws IOException {
 
 		String filename = getFileName(request.getData());
 
-		BufferedInputStream in = null;
-		try {
-			System.out.println("Request Handler: " + SERVER_DIRECTORY + filename);
-			in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
+		byte[] dataForPacket = new byte[516];
+		dataForPacket[0] = 0;
+		dataForPacket[1] = 3;
 
-			byte[] g = new byte[1000];
-			in.read(g);
+		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress, clientPort);
+		DatagramPacket ackPacket;
 
-			for (byte d : g) {
-				System.out.print((char) d);
+		BufferedInputStream in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
+
+		byte[] dataToSend = new byte[512];
+		int n;
+		int i = 1;
+
+		while ((n = in.read(dataToSend)) != -1) {
+
+			// Add block number to packet data
+			dataForPacket[2] = (byte) ((i >> 8) & 0xFF);
+			dataForPacket[3] = (byte) (i & 0xFF);
+
+			// Copy the data from the file into the packet data
+			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+
+			dataPacket.setData(dataForPacket);
+			System.out.println("sending data " + i + " of size: " + n);
+
+			for (byte b : dataForPacket) {
+				System.out.print(b);
+			}
+			System.out.println();
+
+			inOutSocket.send(dataPacket);
+
+			ackPacket = receiveAck();
+
+			if (!(ackPacket.getData()[3] == (byte) i)) {
+				System.out.println("received wrong ack packet");
 			}
 
-		} catch (FileNotFoundException e) {
-			System.out.println("Request Handler: " + filename + " not found");
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("received ack " + request.getData()[3]);
+
+			dataToSend = new byte[512];
+			i++;
+
 		}
 
+		in.close();
 	}
 
+	/**
+	 * Handles a write request
+	 * 
+	 * @throws IOException
+	 */
 	private void writeRequest() throws IOException {
-		System.out.println("Request Handler: " + "handling write request");
 		String filename = getFileName(request.getData());
-		ArrayList<byte[]> dataBlocks = new ArrayList<byte[]>();
 
 		byte[] incomingData = new byte[PACKET_SIZE];
 
@@ -108,8 +138,8 @@ public class RequestHandler implements Runnable {
 		int expectedBlockNumber = 0;
 
 		System.out.println(filename);
-		
-		File newFile = new File(SERVER_DIRECTORY+ filename);
+
+		File newFile = new File(SERVER_DIRECTORY + filename);
 
 		if (!newFile.exists()) {
 			newFile.createNewFile();
@@ -122,13 +152,13 @@ public class RequestHandler implements Runnable {
 			System.out.println("Request Handler: " + "receiving data packet");
 			inOutSocket.receive(incomingPacket);
 			System.out.println("Request Handler: " + "got packet");
-			
-			for(byte b : incomingPacket.getData()){
+
+			for (byte b : incomingPacket.getData()) {
 				System.out.print(b);
 			}
-			
+
 			System.out.println();
-			
+
 			if (!validate(incomingPacket)) {
 				System.out.println("Request Handler: " + "unexpected");
 				break;
@@ -140,11 +170,12 @@ public class RequestHandler implements Runnable {
 
 			if (blockNumber != expectedBlockNumber) {
 				// handle error
+
 			}
 
 			// write block
 			System.out.println("Writing data");
-			writer.write(incomingData, 4, 512);
+			writer.write(incomingData, 4, DATA_SIZE);
 
 			// Build ack
 			DatagramPacket ackPack = buildAckPacket(blockNumber);
@@ -153,11 +184,10 @@ public class RequestHandler implements Runnable {
 
 		} while (transfering);
 		// transfer complete
-		
+
 		System.out.println("Finished");
 		writer.close();
-		
-		
+
 	}
 
 	/**
@@ -185,6 +215,12 @@ public class RequestHandler implements Runnable {
 		return true;
 	}
 
+	/**
+	 * Builds an ack packet for the given block number. Uses
+	 * 
+	 * @param blockNumber
+	 * @return
+	 */
 	private DatagramPacket buildAckPacket(int blockNumber) {
 		byte[] data = new byte[4];
 
@@ -195,11 +231,39 @@ public class RequestHandler implements Runnable {
 
 		DatagramPacket ackPack = new DatagramPacket(data, data.length);
 
-		ackPack.setAddress(request.getAddress());
-		ackPack.setPort(request.getPort());
+		ackPack.setAddress(clientAddress);
+		ackPack.setPort(clientPort);
 
 		return ackPack;
 	}
+
+	private DatagramPacket receiveAck() {
+		byte[] data = new byte[4];
+		DatagramPacket receivePacket = null;
+		receivePacket = new DatagramPacket(data, data.length);
+		try {
+			inOutSocket.receive(receivePacket);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("ERROR! Failed to receive ACK packet");
+		}
+
+		data = receivePacket.getData();
+
+		System.out.println("Received an ACK with block #: " + data[3] + "Containing\n: ");
+		for (byte b : data)
+			System.out.print(b + " ");
+
+		return receivePacket;
+	}
+	
+	
+	private void printVerbose(){
+		
+	}
+	
+	
+	
 
 	@Override
 	public void run() {
@@ -208,7 +272,13 @@ public class RequestHandler implements Runnable {
 
 		// Read
 		if (data[0] == (byte) 0 && data[1] == (byte) 1) {
-			readRequest();
+
+			try {
+				readRequest();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		// Write
@@ -224,6 +294,13 @@ public class RequestHandler implements Runnable {
 		// Unexpected opcode for request
 		else {
 			System.out.println("Request Handler: " + "unexpected packet");
+		}
+
+		try {
+			Thread.sleep(50000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		inOutSocket.close();
