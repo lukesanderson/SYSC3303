@@ -2,12 +2,15 @@ package server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 
@@ -17,9 +20,12 @@ public class RequestHandler implements Runnable {
 	private Server parentServer;
 	private DatagramSocket inOutSocket;
 
+	private int clientPort;
+	private InetAddress clientAddress;
+
 	private boolean transfering = true;
 
-	private static final String SERVER_DIRECTORY = "A:\\School\\Current Semester\\Sysc 3303\\Project\\SYSC3303_TFTP\\src\\server\\";
+	private static final String SERVER_DIRECTORY = "C:\\Users\\Public\\Server\\";
 	private static final int PACKET_SIZE = 516;
 	private static final int DATA_SIZE = 512;
 
@@ -27,10 +33,13 @@ public class RequestHandler implements Runnable {
 		this.request = request;
 		parentServer = parent;
 
+		clientPort = request.getPort();
+		clientAddress = request.getAddress();
+
 		try {
 			inOutSocket = new DatagramSocket();
 		} catch (SocketException e) {
-			System.out.println("Unable to create a socket to handle request");
+			System.out.println("Request Handler: " + "Unable to create a socket to handle request");
 			e.printStackTrace();
 		}
 
@@ -64,7 +73,7 @@ public class RequestHandler implements Runnable {
 
 		BufferedInputStream in = null;
 		try {
-			System.out.println(SERVER_DIRECTORY + filename);
+			System.out.println("Request Handler: " + SERVER_DIRECTORY + filename);
 			in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
 
 			byte[] g = new byte[1000];
@@ -75,7 +84,7 @@ public class RequestHandler implements Runnable {
 			}
 
 		} catch (FileNotFoundException e) {
-			System.out.println(filename + " not found");
+			System.out.println("Request Handler: " + filename + " not found");
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -85,7 +94,7 @@ public class RequestHandler implements Runnable {
 	}
 
 	private void writeRequest() throws IOException {
-		System.out.println("handling write request");
+		System.out.println("Request Handler: " + "handling write request");
 		String filename = getFileName(request.getData());
 		ArrayList<byte[]> dataBlocks = new ArrayList<byte[]>();
 
@@ -93,45 +102,62 @@ public class RequestHandler implements Runnable {
 
 		DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length);
 		DatagramPacket ackPacket = buildAckPacket(0);
-		
+
 		inOutSocket.send(ackPacket);
-		
+
 		int expectedBlockNumber = 0;
+
+		System.out.println(filename);
+		
+		File newFile = new File(SERVER_DIRECTORY+ filename);
+
+		if (!newFile.exists()) {
+			newFile.createNewFile();
+		}
+
+		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 
 		do {
 
-			System.out.println("receiving first data packet");
+			System.out.println("Request Handler: " + "receiving data packet");
 			inOutSocket.receive(incomingPacket);
-			if (!validate(incomingPacket.getData())) {
-				System.out.println("unexpected");
+			System.out.println("Request Handler: " + "got packet");
+			
+			for(byte b : incomingPacket.getData()){
+				System.out.print(b);
+			}
+			
+			System.out.println();
+			
+			if (!validate(incomingPacket)) {
+				System.out.println("Request Handler: " + "unexpected");
 				break;
 			}
+			System.out.println("Request Handler: " + "validated packet");
 			incomingData = incomingPacket.getData();
 			int blockNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
+			System.out.println("Request Handler: " + "packet #" + blockNumber);
 
 			if (blockNumber != expectedBlockNumber) {
 				// handle error
 			}
 
-			// save block
-			dataBlocks.add(incomingData);
+			// write block
+			System.out.println("Writing data");
+			writer.write(incomingData, 4, 512);
 
 			// Build ack
 			DatagramPacket ackPack = buildAckPacket(blockNumber);
 			inOutSocket.send(ackPack);
+			System.out.println("Request Handler: " + "sent ack");
 
 		} while (transfering);
 		// transfer complete
-
-		BufferedOutputStream fileWriter = new BufferedOutputStream(new FileOutputStream(SERVER_DIRECTORY + filename));
-
-		// write to file
-		for (byte[] block : dataBlocks) {
-			fileWriter.write(block);
-		}
-
-		fileWriter.close();
-
+		
+		System.out.println("Finished");
+		writer.close();
+		
+		
 	}
 
 	/**
@@ -141,17 +167,22 @@ public class RequestHandler implements Runnable {
 	 * @param data
 	 * @return false if the packet is not a data packet
 	 */
-	private boolean validate(byte[] data) {
-		if (data[1] != (byte) 3) {
+	private boolean validate(DatagramPacket data) {
+		if (data.getLength() == clientPort && data.getAddress().equals(clientAddress)) {
+			// Packet has a
+			System.out.println("Request Handler: " + "Received packet from an unexpected location");
+			return false;
+		} else if (data.getData()[1] != (byte) 3) {
 			// this is not a data packet
 			return false;
-		} else if (data[data.length - 1] == (byte) 0) {
+		} else if (data.getData()[data.getData().length - 1] == (byte) 0) {
 			// end of transfer
+			System.out.println("Request Handler: " + "data less than 512. ending.");
 			transfering = false;
 			return true;
 		}
 
-		return false;
+		return true;
 	}
 
 	private DatagramPacket buildAckPacket(int blockNumber) {
@@ -159,8 +190,8 @@ public class RequestHandler implements Runnable {
 
 		data[0] = 0;
 		data[1] = 4;
-		data[2] = (byte) (blockNumber & 0xFF);
-		data[3] = (byte) ((blockNumber >> 8) & 0xFF);
+		data[2] = (byte) ((blockNumber >> 8) & 0xFF);
+		data[3] = (byte) (blockNumber & 0xFF);
 
 		DatagramPacket ackPack = new DatagramPacket(data, data.length);
 
@@ -192,7 +223,7 @@ public class RequestHandler implements Runnable {
 
 		// Unexpected opcode for request
 		else {
-			System.out.println("unexpected packet");
+			System.out.println("Request Handler: " + "unexpected packet");
 		}
 
 		inOutSocket.close();

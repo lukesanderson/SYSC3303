@@ -19,7 +19,7 @@ public class Listener implements Runnable {
 		try {
 			socket = new DatagramSocket(69);
 		} catch (SocketException e) {
-			System.out.println("Unable to create listener socket");
+			System.out.println("Listener: "+"Unable to create listener socket");
 			e.printStackTrace();
 		}
 
@@ -37,17 +37,17 @@ public class Listener implements Runnable {
 			byte[] requestData = new byte[512];
 			DatagramPacket request = new DatagramPacket(requestData, requestData.length);
 			try {
-				System.out.println("Listener waiting for request");
+				System.out.println("Listener: "+"Listener waiting for request");
 				socket.receive(request);
-				System.out.println();
+				System.out.println("Listener: ");
 			} catch (IOException e) {
 				break;
 			}
 			parentServer.newRequest(request);
-			parentServer.listThreads();
+			//parentServer.listThreads();
 		}
 
-		System.out.println("Listener has closed");
+		System.out.println("Listener: "+"Listener has closed");
 	}
 
 }

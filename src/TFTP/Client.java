@@ -7,11 +7,22 @@ package TFTP;
 /* the following code deals with the client part of this exercise.
  *in the following exercise the client is send a Read Write or Test message to the Errsim which then be sended to the server
  * further explanation about how the connection between the errSim and the server will is explained in the two other classes.*/
-
-import java.io.*;
-import java.net.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
-import java.util.*;
 
 public class Client {
 	DatagramPacket sendPacket, receivePacket; // creat two DatagramPacket to
@@ -36,6 +47,9 @@ public class Client {
 	private static String fname;
 	private int errorno, packetdata_length = 0;
 	private int sendPort = 69;
+	
+	private static final String CLIENT_DIRECTORY = "C:\\Users\\Public\\";
+	
 
 	public Client() {
 		try {
@@ -55,8 +69,6 @@ public class Client {
 	}
 
 	public void inter() throws IOException {
-		String fileName = "test0.txt"; // make a fileName for test cases for
-										// later iterations
 		String mode = "netascii"; // The used mode
 		Decision request = Decision.RRQ; // default decision which is Read
 		input = new Scanner(System.in); // run a new scanner to scan the input
@@ -84,22 +96,21 @@ public class Client {
 		// gets a file directory from the user
 		System.out.println("Please choose a file to modify.  Type in a file name: ");
 
-		fileName = input.nextLine();
-		File f = new File(fileName);
-
+		fname = input.nextLine();
+		File f = new File(CLIENT_DIRECTORY + fname);
 		// tests if the file exists
 		if (f.exists() && !f.isDirectory()) {
 			// do something
 
-			DatagramPacket requestPacket = buildRequest(fileName.getBytes());
+			DatagramPacket requestPacket = buildRequest(fname.getBytes());
 
 			// decide if it s a read or a write
 			if (request == Decision.RRQ) {
-				System.out.println("Client:" + fileName + ", receive in " + mode + " mode.\n");
+				System.out.println("Client:" + fname + ", receive in " + mode + " mode.\n");
 				read();
 
 			} else if (request == Decision.WRQ) {
-				System.out.println("Client:" + fileName + ", send in " + mode + " mode.\n");
+				System.out.println("Client:" + fname + ", send in " + mode + " mode.\n");
 				write(requestPacket);
 			}
 
@@ -187,87 +198,179 @@ public class Client {
 		ftSocket.close();
 	}
 
-	public void write(DatagramPacket request) {
+	public void write(DatagramPacket request) throws IOException {
 
 		request.getData()[1] = (byte) 2;
+
+		try {
+			sendReceiveSocket.send(request);
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+
 		System.out.println("writing");
-		DatagramPacket ackResponse = receiveAck();
-		
-		InputStream reader = null;
-		File file = new File("client_files\\" + fname);
 
-		if (!file.canRead()) {
+		sendReceiveSocket.receive(request);
 
-			errorno = 2;
-			senderror(errorno);
+		int serverPort = request.getPort();
+		InetAddress serverAddress = request.getAddress();
 
-		}
-		try {
-			reader = new FileInputStream(file);
-		} catch (FileNotFoundException e1) {
-			//
-		}
+		// validate ack
 
-		// Create a new ArrayList of Bytes to store our data
-		// Create n integer to indicate how many bytes we have read from the
-		// file.
-		// Create and initialize dataop ( Data packet opcode array) to size 4
-		// Create and initialize byte array data to a size of 512 bytes.
-		Byte[] arr = null;
-		int n, i = 0;
-		byte[] dataop = new byte[4];
-		dataop[0] = 0;
-		dataop[1] = 3;
-		dataop[2] = 0;
-		dataop[3] = 1;
+		byte[] dataForPacket = new byte[516];
+		dataForPacket[0] = 0;
+		dataForPacket[1] = 3;
 
-		try {
-			for (;;) {
-				ArrayList<Byte> bl = new ArrayList<Byte>();
-				byte[] data = new byte[512];
+		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress, serverPort);
 
-				if ((n = reader.read(data)) == -1)
-					break;
+		byte[] dataToSend = new byte[512];
+		int n;
+		int i = 1;
 
-				for (byte b : dataop) {
-					bl.add(b);
-					i++;
-				}
 
-				for (int k = 0; k < n; k++) {
-					bl.add(data[k]);
-					i++;
-				}
+		in = new BufferedInputStream(new FileInputStream(CLIENT_DIRECTORY+ fname));
 
-				arr = bl.toArray(new Byte[i]);
-				sendDataPacket(arr);
-				receiveAck();
-				dataop[3]++;
-				i = 0;
+		while ((n = in.read(dataToSend)) != -1) {
+			// iterate the file in 512 byte chunks
+			// Each iteration send the packet and receive the ack to match block
+			// number i
+
+			// Add block number to packet data
+			dataForPacket[2] = (byte) ((i >> 8) & 0xFF);
+			dataForPacket[3] = (byte) (i & 0xFF);
+
+			// Copy the data from the file into the packet data
+			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+
+			dataPacket.setData(dataForPacket);
+			System.out.println("sending data " + i + " of size: " + n);
+			
+			for(byte b : dataForPacket){
+				System.out.print(b);
 			}
+			System.out.println();
+			
+			sendReceiveSocket.send(dataPacket);
 
-		} catch (IOException e) {
+			request = receiveAck();
 
-			e.printStackTrace();
-			System.err.println("Failed to complete write request.");
-			Thread.currentThread().interrupt();
-			System.err.println("Thread was interrupted due to failed write");
+			System.out.println("received ack " + request.getData()[3]);
+
+			dataToSend = new byte[512];
+			i++;
 		}
+		
+		System.out.println("Finished sending file");
+		in.close();
+		
 
-		if (arr.length == 516) {
-			Byte[] zeropacket = { 0, 3, 0, dataop[3]++, 0 };
-			sendDataPacket(zeropacket);
-			receiveAck();
-		}
+		// int ssPort = ack0.getPort();
+		// InetAddress ssAddress = ack0.getAddress();
+		InputStream reader = null;
 
-		try {
-			reader.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Failed to close the input stream.");
-		}
-		System.out.println("File has been successully sent.");
-		ftSocket.close();
+		// byte[] stuff = new byte[516];
+		//
+		// for (int i = 3; i < 512; i++) {
+		// stuff[i] = (byte) i;
+		// }
+		//
+		// stuff[0] = 0;
+		// stuff[1] = 3;
+		// stuff[2] = 0;
+		// stuff[3] = 1;
+		//
+		// DatagramPacket data1 = new DatagramPacket(stuff, stuff.length);
+		//
+		// data1.setPort(ssPort);
+		// data1.setAddress(ssAddress);
+		//
+		// try {
+		// sendReceiveSocket.send(data1);
+		// System.out.println("Sent data");
+		//
+		// sendReceiveSocket.receive(ack0);
+		// System.out.println("got ack # " + ack0.getData()[3]);
+		//
+		// } catch (IOException e2) {
+		// // TODO Auto-generated catch block
+		// e2.printStackTrace();
+		// }
+		//
+		// File file = new File("client_files\\" + fname);
+		//
+		// if (!file.canRead()) {
+		//
+		// errorno = 2;
+		// senderror(errorno);
+		//
+		// }
+		// try {
+		// reader = new FileInputStream(file);
+		// } catch (FileNotFoundException e1) {
+		// //
+		// }
+		//
+		// // Create a new ArrayList of Bytes to store our data
+		// // Create n integer to indicate how many bytes we have read from the
+		// // file.
+		// // Create and initialize dataop ( Data packet opcode array) to size 4
+		// // Create and initialize byte array data to a size of 512 bytes.
+		// Byte[] arr = null;
+		// int n, i = 0;
+		// byte[] dataop = new byte[4];
+		// dataop[0] = 0;
+		// dataop[1] = 3;
+		// dataop[2] = 0;
+		// dataop[3] = 1;
+		//
+		// try {
+		// for (;;) {
+		// ArrayList<Byte> bl = new ArrayList<Byte>();
+		// byte[] data = new byte[512];
+		//
+		// if ((n = reader.read(data)) == -1)
+		// break;
+		//
+		// for (byte b : dataop) {
+		// bl.add(b);
+		// i++;
+		// }
+		//
+		// for (int k = 0; k < n; k++) {
+		// bl.add(data[k]);
+		// i++;
+		// }
+		//
+		// arr = bl.toArray(new Byte[i]);
+		// sendDataPacket(arr);
+		// receiveAck();
+		// dataop[3]++;
+		// i = 0;
+		// }
+		//
+		// } catch (IOException e) {
+		//
+		// e.printStackTrace();
+		// System.err.println("Failed to complete write request.");
+		// Thread.currentThread().interrupt();
+		// System.err.println("Thread was interrupted due to failed write");
+		// }
+		//
+		// if (arr.length == 516) {
+		// Byte[] zeropacket = { 0, 3, 0, dataop[3]++, 0 };
+		// sendDataPacket(zeropacket);
+		// receiveAck();
+		// }
+		//
+		// try {
+		// reader.close();
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// System.err.println("Failed to close the input stream.");
+		// }
+		// System.out.println("File has been successully sent.");
+		// ftSocket.close();
 	}
 
 	private void sendDataPacket(Byte[] d) {

@@ -27,7 +27,7 @@ public class Server {
 	}
 
 	public void listThreads() {
-		System.out.println(threadCount);
+		System.out.println("Server: "+threadCount);
 	}
 
 	public void newRequest(DatagramPacket request) {
@@ -43,16 +43,16 @@ public class Server {
 		String command = input.nextLine();
 		if (command.equalsIgnoreCase("q")) {
 			requestListener.exit();
-			System.out.println("threads to close: " + threadCount);
+			System.out.println("Server: "+"threads to close: " + threadCount);
 			int placeholder = threadCount;
 			while (threadCount != 0) {
-				// System.out.println(threadCount);
+				// System.out.println("Server: "+threadCount);
 				if (threadCount != placeholder) {
-					System.out.println("Transfers waiting to finish: " + threadCount);
+					System.out.println("Server: "+"Transfers waiting to finish: " + threadCount);
 					placeholder = threadCount;
 				}
 			}
-			System.out.println("Server has shut down.");
+			System.out.println("Server: "+"Server has shut down.");
 
 		}
 
