@@ -10,7 +10,7 @@ public class Server {
 	private Listener requestListener;
 
 	private int threadCount;
-	
+
 	private boolean verboseMode = false;
 
 	public Server() {
@@ -31,6 +31,10 @@ public class Server {
 		System.out.println("Server: " + threadCount);
 	}
 
+	public boolean isVerbose() {
+		return verboseMode;
+	}
+
 	public void newRequest(DatagramPacket request) {
 		new Thread(new RequestHandler(request, this)).start();
 		threadCreated();
@@ -38,14 +42,14 @@ public class Server {
 
 	private void begin() {
 
+		System.out.println("Start in (q)uiet or (v)erbose");
 		String isVerbose = input.nextLine();
-		if(isVerbose.equalsIgnoreCase("v")){
+		if (isVerbose.equalsIgnoreCase("v")) {
 			verboseMode = true;
-		}else if(isVerbose.equalsIgnoreCase("q")){
+		} else if (isVerbose.equalsIgnoreCase("q")) {
 			verboseMode = false;
 		}
-		
-		
+
 		Thread listenerThread = new Thread(requestListener);
 		listenerThread.start();
 
@@ -68,7 +72,7 @@ public class Server {
 	public static void main(String[] args) {
 
 		// Server that receives requests at port 69
-		
+
 		Server requestServer = new Server();
 
 		requestServer.begin();

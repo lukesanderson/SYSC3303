@@ -10,6 +10,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 public class RequestHandler implements Runnable {
 
@@ -35,6 +36,7 @@ public class RequestHandler implements Runnable {
 
 		try {
 			inOutSocket = new DatagramSocket();
+			inOutSocket.setSoTimeout(100000);
 		} catch (SocketException e) {
 			System.out.println("Request Handler: " + "Unable to create a socket to handle request");
 			e.printStackTrace();
@@ -71,21 +73,22 @@ public class RequestHandler implements Runnable {
 	private void readRequest() throws IOException {
 
 		String filename = getFileName(request.getData());
+		printVerbose(request, false);
 
 		byte[] dataForPacket = new byte[516];
 		dataForPacket[0] = 0;
 		dataForPacket[1] = 3;
 
 		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress, clientPort);
-		DatagramPacket ackPacket;
+		DatagramPacket ackPacket = null;
 
 		BufferedInputStream in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
 
 		byte[] dataToSend = new byte[512];
-		int n;
+		int n = in.read(dataToSend);
 		int i = 1;
 
-		while ((n = in.read(dataToSend)) != -1) {
+		do {
 
 			// Add block number to packet data
 			dataForPacket[2] = (byte) ((i >> 8) & 0xFF);
@@ -102,12 +105,24 @@ public class RequestHandler implements Runnable {
 			}
 			System.out.println();
 
-			inOutSocket.send(dataPacket);
+			try {
+				inOutSocket.send(dataPacket);
+			} catch (SocketTimeoutException e) {
+				System.out.println("Timeout sending packet data " + i);
+			}
 
-			ackPacket = receiveAck();
+			try {
+				ackPacket = receiveAck();
+			} catch (SocketTimeoutException e) {
+				System.out.println("Timeout receiving ack " + i + " resending data " + i);
+				continue;
+			}
 
-			if (!(ackPacket.getData()[3] == (byte) i)) {
-				System.out.println("received wrong ack packet");
+			// check the packet number matches what server is expecting
+			if (ackPacket.getData()[3] < (byte) i) {
+				System.out.println("received duplicate ack packet");
+			} else if (ackPacket.getData()[3] > (byte) i) {
+				System.out.println("received ack from the future");
 			}
 
 			System.out.println("received ack " + request.getData()[3]);
@@ -115,7 +130,7 @@ public class RequestHandler implements Runnable {
 			dataToSend = new byte[512];
 			i++;
 
-		}
+		} while ((n = in.read(dataToSend)) != -1);
 
 		in.close();
 	}
@@ -135,8 +150,6 @@ public class RequestHandler implements Runnable {
 
 		inOutSocket.send(ackPacket);
 
-		int expectedBlockNumber = 0;
-
 		System.out.println(filename);
 
 		File newFile = new File(SERVER_DIRECTORY + filename);
@@ -146,35 +159,30 @@ public class RequestHandler implements Runnable {
 		}
 
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
-
 		do {
 
 			System.out.println("Request Handler: " + "receiving data packet");
 			inOutSocket.receive(incomingPacket);
 			System.out.println("Request Handler: " + "got packet");
 
+			int blockNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
+
 			for (byte b : incomingPacket.getData()) {
 				System.out.print(b);
 			}
 
 			System.out.println();
-
 			if (!validate(incomingPacket)) {
-				System.out.println("Request Handler: " + "unexpected");
+				System.out.println("Request Handler: " + "unexpected packet");
 				break;
 			}
 			System.out.println("Request Handler: " + "validated packet");
+
 			incomingData = incomingPacket.getData();
-			int blockNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
+
 			System.out.println("Request Handler: " + "packet #" + blockNumber);
 
-			if (blockNumber != expectedBlockNumber) {
-				// handle error
-
-			}
-
 			// write block
-			System.out.println("Writing data");
 			writer.write(incomingData, 4, DATA_SIZE);
 
 			// Build ack
@@ -197,15 +205,16 @@ public class RequestHandler implements Runnable {
 	 * @param data
 	 * @return false if the packet is not a data packet
 	 */
-	private boolean validate(DatagramPacket data) {
-		if (data.getLength() == clientPort && data.getAddress().equals(clientAddress)) {
-			// Packet has a
+	private boolean validate(DatagramPacket packet) {
+		byte[] data = packet.getData();
+
+		if (packet.getPort() != clientPort && !(packet.getAddress().equals(clientAddress))) {
 			System.out.println("Request Handler: " + "Received packet from an unexpected location");
 			return false;
-		} else if (data.getData()[1] != (byte) 3) {
+		} else if (data[1] != (byte) 3) {
 			// this is not a data packet
 			return false;
-		} else if (data.getData()[data.getData().length - 1] == (byte) 0) {
+		} else if (data[data.length - 1] == (byte) 0) {
 			// end of transfer
 			System.out.println("Request Handler: " + "data less than 512. ending.");
 			transfering = false;
@@ -237,16 +246,18 @@ public class RequestHandler implements Runnable {
 		return ackPack;
 	}
 
-	private DatagramPacket receiveAck() {
+	/**
+	 * Receives ack packet and validates it
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	private DatagramPacket receiveAck() throws IOException {
 		byte[] data = new byte[4];
 		DatagramPacket receivePacket = null;
 		receivePacket = new DatagramPacket(data, data.length);
-		try {
-			inOutSocket.receive(receivePacket);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("ERROR! Failed to receive ACK packet");
-		}
+
+		inOutSocket.receive(receivePacket);
 
 		data = receivePacket.getData();
 
@@ -256,14 +267,35 @@ public class RequestHandler implements Runnable {
 
 		return receivePacket;
 	}
-	
-	
-	private void printVerbose(){
-		
+
+	/**
+	 * Prints any detailed message in verbose mode
+	 * 
+	 * @param message
+	 */
+	@SuppressWarnings(value = { "unused" })
+	private void printVerbose(String message) {
+		if (parentServer.isVerbose()) {
+			System.out.println(message);
+		}
 	}
-	
-	
-	
+
+	/**
+	 * Prints packet details in verbose mode
+	 * 
+	 * @param packet
+	 * @param isSending
+	 */
+	private void printVerbose(DatagramPacket packet, boolean isSending) {
+		if (parentServer.isVerbose()) {
+			if (isSending) {
+				System.out.println("Sending packet: ");
+			} else {
+				System.out.println("Received packet: ");
+			}
+
+		}
+	}
 
 	@Override
 	public void run() {
