@@ -6,9 +6,26 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.Scanner;
 
+/**
+ * TFTP Error Simulator that can affects the selected ACK or DATA packet, then
+ * sends it to its respective destination.
+ * 
+ * Possible Errors that can be simulated are: -Losing a packet -Delaying a
+ * packet -Duplicating a packet -Invalid Opcode -Unknown transfer ID
+ * 
+ * @author Luke Sanderson - Team 5
+ *
+ *         Systems and Computer Engineering, Carleton University
+ * @version 2.0
+ *
+ */
 public class ErrorSim implements Runnable {
 
-	private static final int delay = 2000; //very large delay only for testing purposes
+	private static final int DELAY = 2500; //2.5 second delay
+	private static final int DEFAULT_PACKET_SIZE = 512;
+	private static final int INITIAL_SERVER_PORT = 5000;
+	private static final int DATA = 3;
+	private static final int ACK = 4;
 	private DatagramSocket sendReceiveSocket;
 	private DatagramSocket errorSocket;
 	private DatagramPacket initPacket;
@@ -17,21 +34,24 @@ public class ErrorSim implements Runnable {
 	private int blockNum;
 	private int opCode;
 	private int mode;
-	
-	
-	
-	//private boolean errorFlag = false, normal = false, duplicate = false, lost = false, errorSent = false; // delay
-																											
+
+	/**
+	 * Constructor for the ErrorSim that is passed the initial packet and client port,
+	 * as well as the user input need to select which error to create.	
+	 * 
+	 * @param packet
+	 * @param reader
+	 * @param eS
+	 */
 	public ErrorSim(DatagramPacket packet, Scanner reader, ErrorSelect eS) {
 		this.clientPort = packet.getPort();
 		this.initPacket = packet;
-		this.blockNum = eS.blockNum;
-		this.opCode = eS.OpCode;
-		this.mode = eS.mode;
+		this.blockNum = eS.blockNum; //Holds the block which the user wishes to alter
+		this.opCode = eS.OpCode; //Holds the user input for Ack or DATA
+		this.mode = eS.mode; //Holds the type of error the user wants to create
 		
 		try {
 			sendReceiveSocket = new DatagramSocket();
-			errorSocket = new DatagramSocket();
 			
 		} catch (SocketException se) {
 			System.out.println("Socket Exception on ErrorSim");
@@ -40,18 +60,30 @@ public class ErrorSim implements Runnable {
 		
 	}
 
+	/**
+	 * Creates a new thread for the requested packet delay
+	 * 
+	 * @param data
+	 */
 	public void Delay(DatagramPacket data) {
-		Thread requests = new Thread(new Delay(delay, data, this));
+		Thread requests = new Thread(new Delay(DELAY, data, this));
 		requests.start();
 	}
 
-
+	
+	/**
+	 * 
+	 * Passes packets between the client and server, and 
+	 * generates an error on the packet chosen by the user input, when the packet is received.
+	 * 
+	 * @return boolean
+	 */
 	public boolean sendReceive() {
 		
-		byte data[] = new byte[516];
+		byte data[] = new byte[DEFAULT_PACKET_SIZE];
 		// Create a new receive packet
 		DatagramPacket receivePacket = new DatagramPacket(data, data.length);
-		// Wait until a new packet is received
+		// Waits until a new packet is received
 		try {
 			sendReceiveSocket.receive(receivePacket);
 		} catch (IOException e) {
@@ -59,24 +91,19 @@ public class ErrorSim implements Runnable {
 			System.exit(1);
 		
 		}
-		
-		
-		
+		//Creates a byte array to parse the packet for opcode and block number
 		byte[] packetData = receivePacket.getData();
-		
 		
 		int opcode = ((packetData[0] & 0xff) << 8) | (packetData[1] & 0xff);
 		int blockNumber = ((packetData[2] & 0xff) << 8) | (packetData[3] & 0xff);
 
-		// Update the port if it hasn't been already
+		// If the server port is unknown, update it
 		if (serverPort == -1) {
 			serverPort = receivePacket.getPort();
 		}
-		
 
-		// If the data packet was received from the server send it to the client
-		// and vice versa
-		// Builds packet to be passed on
+		// Passes the packet from server to client, and client to server.
+		// Creates a new packet with the correct destination address
 		if (receivePacket.getPort() == serverPort) {
 			receivePacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(),
 					receivePacket.getAddress(), clientPort);
@@ -85,32 +112,34 @@ public class ErrorSim implements Runnable {
 					receivePacket.getAddress(), serverPort);
 		}
 
-		// data
 		
-		if (blockNumber == blockNum && opcode == 3 && opCode == 02) {
+		//Checks if the packet is Data packet, and the block number we want,
+		//then generates the selected error if we wanted to.
+		if (blockNumber == blockNum && opcode == DATA && opCode == 02) {
 			if (mode == 01) {
-				System.out.println("Packet lost.");
+				System.out.println("Packet lost."); //Dont send anything to simulate losing a packet
 			} else if (mode == 03) {
-				System.out.println("Duplicate packet sent.");
+				System.out.println("Duplicate packet sent."); //Send the packet twice to simulate duplicating
 				sendPacket(receivePacket);
 				sendPacket(receivePacket);
 			} else if (mode == 02) {
-				System.out.println("Delayed the packet for 2.5 seconds");
+				System.out.println("Delayed the packet for 2.5 seconds"); //Delay the packet 2.5 seconds
 				Delay(receivePacket);
 			} else if(mode == 04){
-				receivePacket = newMode(receivePacket);
+				receivePacket = newMode(receivePacket); //Change the mode to simulate an invalid opcode
 				sendPacket(receivePacket);
 				System.out.println("Opcode has been altered");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
-				System.out.println("Sent from an invalid ID");
+				System.out.println("Sent from an invalid ID"); //Send from a different socket
 			}else { //send normally
 				sendPacket(receivePacket);
 			}
 		
 		}
-		// ack
-		else if (blockNumber == blockNum && opcode == 4 && opCode == 01) {
+		//If the packet is an ACK packet, and the block number we want,
+		//then generates the selected error if we wanted to.
+		else if (blockNumber == blockNum && opcode == ACK && opCode == 01) {
 			if (mode == 01) {
 				System.out.println("Packet lost.");
 			} else if (mode == 03) {
@@ -123,20 +152,29 @@ public class ErrorSim implements Runnable {
 			} else if(mode == 04){
 				receivePacket = newMode(receivePacket);
 				sendPacket(receivePacket);
-				System.out.println("Opcode has been altered");
+				System.out.println("Opcode has been altered.");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
-				System.out.println("Sent from an invalid ID");
+				System.out.println("Sent from an invalid ID.");
 			} else { //send normally
 				sendPacket(receivePacket);
 			}
-		} else {
+		} else { //If it is not the packet we are looking to change, send it normally
 			sendPacket(receivePacket);
 		}
 		
-		
 		return true;
 	}
+
+	
+	/**
+	 * Changes the opcode to an invalid operation.
+	 * Note: There are multiple ways to generate an invalid operation, 
+	 * but currently we generate the error only by invalidating the opcode.
+	 * 
+	 * @param receivedPacket
+	 * @return receivedPacket
+	 */
 	private DatagramPacket newMode(DatagramPacket receivedPacket){
 		byte[] packetData = receivedPacket.getData();
 		packetData[0] = 9;
@@ -145,12 +183,24 @@ public class ErrorSim implements Runnable {
 		return receivedPacket;
 	}
 	
+	/**
+	 * Sends the packet from a different socket, to simulate an unknown transfer ID
+	 * 
+	 * @param packet
+	 */
 	private void sendErrorPacket(DatagramPacket packet){
+		try {
+			errorSocket = new DatagramSocket(); //Used to send from an unknown ID
+		} catch (SocketException se) {
+			System.out.println("Socket Exception on Error socket");
+			System.exit(1);
+		}
 		try {
 			errorSocket.send(packet);
 		} catch (IOException e) {
 			System.out.println("IO exception while attempting to send error packet");
 		}
+		errorSocket.close();
 	}
 	
 	// used to send packets from the ErrorSim
@@ -167,7 +217,7 @@ public class ErrorSim implements Runnable {
 
 		// Create the datagram packet for the request
 	   DatagramPacket initialRequest = new DatagramPacket(initPacket.getData(), initPacket.getLength(),
-			initPacket.getAddress(), 69);
+			initPacket.getAddress(), INITIAL_SERVER_PORT);
 		sendPacket(initialRequest);
 
 		// Loop until the send and receive method is finished
@@ -177,8 +227,9 @@ public class ErrorSim implements Runnable {
 		}
 
 		
-		// We're finished, so close the sockets.
+		// Operation finished, close the socket.
 		sendReceiveSocket.close();
+		
 	}
 
 }
