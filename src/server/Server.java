@@ -35,10 +35,19 @@ public class Server {
 		return verboseMode;
 	}
 
-	public void newRequest(DatagramPacket request) {
-		new Thread(new RequestHandler(request, this)).start();
+	
+	public void newReadRequest(DatagramPacket request){
+		new Thread(new ReadRequestHandler(request, this)).start();
 		threadCreated();
 	}
+	
+	public void newWriteRequest(DatagramPacket request){
+		new Thread(new WriteRequestHandler(request, this)).start();
+		threadCreated();
+	}
+	
+	
+	
 
 	private void begin() {
 

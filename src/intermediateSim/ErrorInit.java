@@ -18,7 +18,7 @@ public class ErrorInit {
  
         //Setup Port 2300 to receive initial packets for client request
 		try {
-			receiveSocket = new DatagramSocket(2300);
+			receiveSocket = new DatagramSocket(23);
 		} catch (SocketException se) {
 			System.out.println("Socket Exception on port 2300");
 			System.exit(1);

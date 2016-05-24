@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class ErrorSim implements Runnable {
 
-	private static final int delay = 110000; //very large delay only for testing purposes
+	private static final int delay = 2000; //very large delay only for testing purposes
 	private DatagramSocket sendReceiveSocket;
 	private DatagramSocket errorSocket;
 	private DatagramPacket initPacket;
@@ -167,7 +167,7 @@ public class ErrorSim implements Runnable {
 
 		// Create the datagram packet for the request
 	   DatagramPacket initialRequest = new DatagramPacket(initPacket.getData(), initPacket.getLength(),
-			initPacket.getAddress(), 5000);
+			initPacket.getAddress(), 69);
 		sendPacket(initialRequest);
 
 		// Loop until the send and receive method is finished
