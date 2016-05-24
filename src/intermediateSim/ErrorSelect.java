@@ -3,7 +3,14 @@ package intermediateSim;
 import java.io.IOException;
 import java.util.Scanner;
 
-
+/**
+ * 
+ * @author Luke Sanderson - Team 5
+ * Systems and Computer Engineering,
+ * Carleton University
+ * @version 1.0
+ *
+ */
 public class ErrorSelect {
 	
 	
@@ -33,7 +40,7 @@ public class ErrorSelect {
 		}
 
 		// selects block, loops until a valid number selected
-		System.out.println("Please enter the block number in the format 00");
+		System.out.println("Please enter the block number");
 		while (true) {
 			try {
 				blockNum = Integer.parseInt(READER.nextLine());

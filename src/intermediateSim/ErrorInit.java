@@ -5,44 +5,52 @@ import java.net.*;
 import java.util.Scanner;
 
 /**
- * Error simulator that listens on port 2300 for new client requests, then creates the new ERRSIM threads for the
- * requests.
+ * Initializes all new Error simulator threads after receiving an initial packet. 
+ * The new ErrorSim threads are passed the initial packet, and an instance of the user input and the scanner.
+ * 
+ * 
+ * @author Luke Sanderson - Team 5
+ * Systems and Computer Engineering,
+ * Carleton University
+ * @version 2.0
  *
  */
 public class ErrorInit {
 	
 	private DatagramSocket receiveSocket;
 	private static final Scanner READER = new Scanner(System.in);
+	private static final int DEFAULT_PACKET_SIZE = 512;
+	private static final int INITIAL_SOCKET = 2300;
 
 	public ErrorInit() {
  
         //Setup Port 2300 to receive initial packets for client request
 		try {
-			receiveSocket = new DatagramSocket(2300);
+			receiveSocket = new DatagramSocket(INITIAL_SOCKET);
 		} catch (SocketException se) {
-			System.out.println("Socket Exception on port 2300");
+			System.out.println("Socket Exception on port: " + INITIAL_SOCKET);
 			System.exit(1);
 		} 
 	}
 	
 	/**
-	 * Listens for new client requests and creates an ErrorSimThread thread
-     * to deal with each new request.
+	 * Listens on the initial socket, waiting for packets from client.
+	 * Creates an ErrorSim thread when received.
 	 */
 	public void receiveAndEcho() {
 		int clientPort;
-		ErrorSelect eS = new ErrorSelect();
+		ErrorSelect eS = new ErrorSelect(); //The user input used to select which kind of error the user wants to simulate
 		try {
 			eS.menu();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
+			System.out.println("IOException while trying to receive user input");
 			e1.printStackTrace();
 		}
-		System.out.println("Error Simulator started. Waiting to receive packet");
+		System.out.println("Error Simulator started. Waiting to receive packet on port: " + INITIAL_SOCKET);
 		
 		while(true){
             // Create the receive packet for the request
-            byte data[] = new byte[516];
+            byte data[] = new byte[DEFAULT_PACKET_SIZE];
 			DatagramPacket receivePacket = new DatagramPacket(data, data.length);
 
 			// Block until a datagram packet is received from receiveSocket.
@@ -53,10 +61,9 @@ public class ErrorInit {
 				break;
 			}
 
-			// Need to print out data in received packet**
 			// Process the received datagram.
-            System.out.println("Simulator: Packet received:");
-            System.out.println("From host: " + receivePacket.getAddress());
+            System.out.println("Packet received from host.");
+            System.out.println("Host address: " + receivePacket.getAddress());
             clientPort = receivePacket.getPort();
             System.out.println("Host port: " + clientPort);
             System.out.println("Length: " + receivePacket.getLength());
@@ -71,7 +78,7 @@ public class ErrorInit {
             System.out.println(received);
 
             // New Thread for Error Sim
-			System.out.println("Creating new Error Simulator Thread");
+			System.out.println("Creating new Error Simulator Thread to handle request");
 			Thread t = new Thread(new ErrorSim(receivePacket, READER, eS));
 			t.start();
 		}
@@ -80,6 +87,7 @@ public class ErrorInit {
 		receiveSocket.close();
 	}
 	
+	//Create a ErrorInit thread to handle initial setup
 	public static void main(String args[]) {
 		ErrorInit e = new ErrorInit();
 		e.receiveAndEcho();
