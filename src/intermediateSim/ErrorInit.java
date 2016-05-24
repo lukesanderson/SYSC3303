@@ -5,7 +5,7 @@ import java.net.*;
 import java.util.Scanner;
 
 /**
- * Error simulator that listens on port 23 for new client requests, then creates the new ERRSIM threads for the
+ * Error simulator that listens on port 2300 for new client requests, then creates the new ERRSIM threads for the
  * requests.
  *
  */
@@ -16,11 +16,11 @@ public class ErrorInit {
 
 	public ErrorInit() {
  
-        //Setup Port 23 to receive initial packets for client request
+        //Setup Port 2300 to receive initial packets for client request
 		try {
-			receiveSocket = new DatagramSocket(23);
+			receiveSocket = new DatagramSocket(2300);
 		} catch (SocketException se) {
-			System.out.println("Socket Exception on port 23");
+			System.out.println("Socket Exception on port 2300");
 			System.exit(1);
 		} 
 	}
@@ -30,9 +30,16 @@ public class ErrorInit {
      * to deal with each new request.
 	 */
 	public void receiveAndEcho() {
-		int clientPort, j=0;
-		System.out.println("Error Simulator started. Waiting to receive packet...");
-      
+		int clientPort;
+		ErrorSelect eS = new ErrorSelect();
+		try {
+			eS.menu();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		System.out.println("Error Simulator started. Waiting to receive packet");
+		
 		while(true){
             // Create the receive packet for the request
             byte data[] = new byte[516];
@@ -55,12 +62,6 @@ public class ErrorInit {
             System.out.println("Length: " + receivePacket.getLength());
             System.out.println("Containing: " );
             
-         // print the bytes
-            /*
-            for (j=0;j<receivePacket.getLength();j++) {
-                System.out.print("byte " + j + " " + data[j]);
-            }
-            */
             for (byte b : receivePacket.getData()) {
 				System.out.print(b);
 			}
@@ -71,7 +72,7 @@ public class ErrorInit {
 
             // New Thread for Error Sim
 			System.out.println("Creating new Error Simulator Thread");
-			Thread t = new Thread(new ErrorSim(receivePacket, READER));
+			Thread t = new Thread(new ErrorSim(receivePacket, READER, eS));
 			t.start();
 		}
 
