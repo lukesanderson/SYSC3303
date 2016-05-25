@@ -20,7 +20,7 @@ public class ErrorInit {
 	private DatagramSocket receiveSocket;
 	private static final Scanner READER = new Scanner(System.in);
 	private static final int DEFAULT_PACKET_SIZE = 512;
-	private static final int INITIAL_SOCKET = 2300;
+	private static final int INITIAL_SOCKET = 23;
 
 	public ErrorInit() {
  
@@ -39,15 +39,17 @@ public class ErrorInit {
 	 */
 	public void receiveAndEcho() {
 		int clientPort;
+		
 		ErrorSelect eS = new ErrorSelect(); //The user input used to select which kind of error the user wants to simulate
+		
 		try {
 			eS.menu();
 		} catch (IOException e1) {
 			System.out.println("IOException while trying to receive user input");
 			e1.printStackTrace();
 		}
-		System.out.println("Error Simulator started. Waiting to receive packet on port: " + INITIAL_SOCKET);
-		
+		VerboseQuiet vQ = new VerboseQuiet(eS.verboseMode);
+		vQ.printThis(true, "\nError Simulator started. Waiting to receive packet on port: " + INITIAL_SOCKET);
 		while(true){
             // Create the receive packet for the request
             byte data[] = new byte[DEFAULT_PACKET_SIZE];
@@ -60,22 +62,15 @@ public class ErrorInit {
 				System.out.println("Exception on receive socket");
 				break;
 			}
-
 			// Process the received datagram.
-            System.out.println("Packet received from host.");
-            System.out.println("Host address: " + receivePacket.getAddress());
-            clientPort = receivePacket.getPort();
-            System.out.println("Host port: " + clientPort);
-            System.out.println("Length: " + receivePacket.getLength());
-            System.out.println("Containing: " );
+			vQ.printThis(false, "\nPacket received from host.");
+			vQ.printThis(false, "\nHost address: " + receivePacket.getAddress());
+			clientPort = receivePacket.getPort();
+			vQ.printThis(false, "\nHost port: " + clientPort);
+			vQ.printThis(false, "\nLength: " + receivePacket.getLength());
+			vQ.printThis(false, "\nContaining: \n");
+            vQ.printThis(false, new String(receivePacket.getData()));
             
-            for (byte b : receivePacket.getData()) {
-				System.out.print(b);
-			}
-
-            // Form a String from the byte array, and print the string.
-            String received = new String(data,0,receivePacket.getLength());
-            System.out.println(received);
 
             // New Thread for Error Sim
 			System.out.println("Creating new Error Simulator Thread to handle request");

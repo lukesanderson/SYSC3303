@@ -23,7 +23,7 @@ public class ErrorSim implements Runnable {
 
 	private static final int DELAY = 2500; //2.5 second delay
 	private static final int DEFAULT_PACKET_SIZE = 512;
-	private static final int INITIAL_SERVER_PORT = 5000;
+	private static final int INITIAL_SERVER_PORT = 69;
 	private static final int DATA = 3;
 	private static final int ACK = 4;
 	private DatagramSocket sendReceiveSocket;
