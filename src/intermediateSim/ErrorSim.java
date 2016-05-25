@@ -22,7 +22,7 @@ import java.util.Scanner;
 public class ErrorSim implements Runnable {
 
 	private static final int DELAY = 2500; //2.5 second delay
-	private static final int DEFAULT_PACKET_SIZE = 512;
+	private static final int DEFAULT_PACKET_SIZE = 516;
 	private static final int INITIAL_SERVER_PORT = 69;
 	private static final int DATA = 3;
 	private static final int ACK = 4;
@@ -131,6 +131,7 @@ public class ErrorSim implements Runnable {
 				System.out.println("Opcode has been altered");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
+				sendPacket(receivePacket);
 				System.out.println("Sent from an invalid ID"); //Send from a different socket
 			}else { //send normally
 				sendPacket(receivePacket);
@@ -155,6 +156,7 @@ public class ErrorSim implements Runnable {
 				System.out.println("Opcode has been altered.");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
+				sendPacket(receivePacket);
 				System.out.println("Sent from an invalid ID.");
 			} else { //send normally
 				sendPacket(receivePacket);

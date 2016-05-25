@@ -19,7 +19,7 @@ public class ErrorInit {
 	
 	private DatagramSocket receiveSocket;
 	private static final Scanner READER = new Scanner(System.in);
-	private static final int DEFAULT_PACKET_SIZE = 512;
+	private static final int DEFAULT_PACKET_SIZE = 516;
 	private static final int INITIAL_SOCKET = 23;
 
 	public ErrorInit() {
@@ -68,12 +68,12 @@ public class ErrorInit {
 			clientPort = receivePacket.getPort();
 			vQ.printThis(false, "\nHost port: " + clientPort);
 			vQ.printThis(false, "\nLength: " + receivePacket.getLength());
-			vQ.printThis(false, "\nContaining: \n");
-            vQ.printThis(false, new String(receivePacket.getData()));
+			//vQ.printThis(false, "\nContaining: \n");
+           // vQ.printThis(false, new String(receivePacket.getData()));
             
 
             // New Thread for Error Sim
-			System.out.println("Creating new Error Simulator Thread to handle request");
+			System.out.println("\nCreating new Error Simulator Thread to handle request");
 			Thread t = new Thread(new ErrorSim(receivePacket, READER, eS));
 			t.start();
 		}
