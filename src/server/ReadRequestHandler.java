@@ -9,7 +9,6 @@ import java.net.SocketTimeoutException;
 
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
-import exceptions.UnknownIDException;
 
 public class ReadRequestHandler extends RequestHandler implements Runnable {
 
@@ -96,7 +95,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 	}
 
 	/**
-	 * Receives and returns ack packet
+	 * Receives ack packet
 	 * 
 	 * @return
 	 * @throws IOException
@@ -160,9 +159,6 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 		try {
 			readRequest();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (ReceivedErrorException e) {
 			System.out.println("Received error packet. message: \n" + e.getMessage());
 		} catch (ErrorException e) {
@@ -181,6 +177,9 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		inOutSocket.close();

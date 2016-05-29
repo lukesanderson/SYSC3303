@@ -24,7 +24,7 @@ public class RequestHandler {
 	protected static final int PACKET_SIZE = 516;
 	protected static final int DATA_SIZE = 512;
 	protected static final int ILLEGAL_OPER_ERR_CODE = 4;
-	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 4;
+	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
 
 	public RequestHandler(DatagramPacket request, Server parent) {
 		this.request = request;
@@ -64,32 +64,6 @@ public class RequestHandler {
 		return filename;
 	}
 
-	/**
-	 * Validates the data packet. If the packet's data is less than 512 bytes,
-	 * TRANSFERING is set to false.
-	 * 
-	 * @param data
-	 * @return false if the packet is not a data packet
-	 */
-	protected boolean validateDataPacket(DatagramPacket packet) {
-		byte[] data = packet.getData();
-
-		if (packet.getPort() != clientPort && !(packet.getAddress().equals(clientAddress))) {
-			System.out.println("Request Handler: " + "Received packet from an unexpected location");
-			return false;
-		} else if (data[1] != (byte) 3) {
-			// this is not a data packet
-			return false;
-		} else if (data[data.length - 1] == (byte) 0) {
-			// end of transfer
-			System.out.println("Request Handler: " + "data less than 512. ending.");
-			transfering = false;
-			return true;
-		}
-
-		return true;
-	}
-
 	protected DatagramPacket buildError(byte[] errMessage, int errCode) {
 
 		byte[] errData = new byte[5 + errMessage.length];
@@ -123,25 +97,4 @@ public class RequestHandler {
 		}
 	}
 
-	/**
-	 * Builds an ack packet for the given block number. Uses
-	 * 
-	 * @param blockNumber
-	 * @return
-	 */
-	protected DatagramPacket buildAckPacket(int blockNumber) {
-		byte[] data = new byte[4];
-
-		data[0] = 0;
-		data[1] = 4;
-		data[2] = (byte) ((blockNumber >> 8) & 0xFF);
-		data[3] = (byte) (blockNumber & 0xFF);
-
-		DatagramPacket ackPack = new DatagramPacket(data, data.length);
-
-		ackPack.setAddress(clientAddress);
-		ackPack.setPort(clientPort);
-
-		return ackPack;
-	}
 }
