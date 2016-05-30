@@ -1,151 +1,275 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <class-diagram version="1.1.9" icons="true" automaticImage="JPEG" always-add-relationships="true" generalizations="true" 
   realizations="true" associations="true" dependencies="true" nesting-relationships="true" router="FAN">  
-  <class id="1" language="java" name="intermediateSim.ErrorSim" project="TFTP_SYSC3303_Team5" 
+  <class id="1" language="java" name="exceptions.ErrorException" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/exceptions/ErrorException.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="171" width="155" x="-3" y="1145"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="2" language="java" name="intermediateSim.ErrorSim" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/intermediateSim/ErrorSim.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="405" width="207" x="952" y="475"/>    
+    <position height="423" width="253" x="1125" y="682"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="2" language="java" name="server.RequestHandler" project="TFTP_SYSC3303_Team5" 
+  <class id="3" language="java" name="server.RequestHandler" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/server/RequestHandler.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="387" width="308" x="184" y="-60"/>    
+    <position height="369" width="308" x="247" y="147"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="3" language="java" name="TFTP.Client" project="TFTP_SYSC3303_Team5" 
-    file="/TFTP_SYSC3303_Team5/src/TFTP/Client.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="495" width="262" x="532" y="-60"/>    
+  <class id="4" language="java" name="intermediateSim.VerboseQuiet" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/intermediateSim/VerboseQuiet.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="117" width="167" x="897" y="682"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <enumeration id="4" language="java" name="TFTP.Client.Decision" project="TFTP_SYSC3303_Team5" 
+  <class id="5" language="java" name="server.ReadRequestHandler" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/server/ReadRequestHandler.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="153" width="250" x="-43" y="682"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="6" language="java" name="TFTP.Client" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/TFTP/Client.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="117" width="119" x="453" y="475"/>    
+    <position height="495" width="262" x="595" y="147"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <enumeration id="7" language="java" name="TFTP.Client.Decision" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/TFTP/Client.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="117" width="119" x="579" y="682"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </enumeration>  
-  <class id="5" language="java" name="intermediateSim.Delay" project="TFTP_SYSC3303_Team5" 
-    file="/TFTP_SYSC3303_Team5/src/intermediateSim/Delay.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="135" width="197" x="834" y="-60"/>    
+  <class id="8" language="java" name="intermediateSim.ErrorSelect" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/intermediateSim/ErrorSelect.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="207" width="247" x="1085" y="1145"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="6" language="java" name="intermediateSim.ErrorInit" project="TFTP_SYSC3303_Team5" 
+  <class id="9" language="java" name="intermediateSim.ErrorInit" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/intermediateSim/ErrorInit.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="153" width="247" x="1071" y="-60"/>    
+    <position height="189" width="247" x="897" y="147"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <enumeration id="7" language="java" name="TFTP.Client.Mode" project="TFTP_SYSC3303_Team5" 
+  <enumeration id="10" language="java" name="TFTP.Client.Mode" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/TFTP/Client.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="117" width="119" x="612" y="475"/>    
+    <position height="117" width="119" x="738" y="682"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </enumeration>  
-  <class id="8" language="java" name="server.Listener" project="TFTP_SYSC3303_Team5" 
+  <class id="11" language="java" name="exceptions.UnknownIDException" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/exceptions/UnknownIDException.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="171" width="209" x="228" y="1464"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="12" language="java" name="exceptions.ReceivedErrorException" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/exceptions/ReceivedErrorException.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="153" width="228" x="-43" y="1464"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="13" language="java" name="server.WriteRequestHandler" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/server/WriteRequestHandler.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="117" width="250" x="268" y="682"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="14" language="java" name="intermediateSim.Delay" project="TFTP_SYSC3303_Team5" 
+    file="/TFTP_SYSC3303_Team5/src/intermediateSim/Delay.java" binary="false" corner="BOTTOM_RIGHT">    
+    <position height="135" width="197" x="1184" y="147"/>    
+    <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
+      sort-features="false" accessors="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true" static="true"/>      
+      <operations public="true" package="true" protected="true" private="true" static="true"/>    
+    </display>  
+  </class>  
+  <class id="15" language="java" name="server.Listener" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/server/Listener.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="171" width="190" x="184" y="920"/>    
+    <position height="171" width="190" x="477" y="1464"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <class id="9" language="java" name="server.Server" project="TFTP_SYSC3303_Team5" 
+  <class id="16" language="java" name="server.Server" project="TFTP_SYSC3303_Team5" 
     file="/TFTP_SYSC3303_Team5/src/server/Server.java" binary="false" corner="BOTTOM_RIGHT">    
-    <position height="261" width="229" x="184" y="475"/>    
+    <position height="279" width="229" x="477" y="1145"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
       sort-features="false" accessors="true" visibility="true">      
       <attributes public="true" package="true" protected="true" private="true" static="true"/>      
       <operations public="true" package="true" protected="true" private="true" static="true"/>    
     </display>  
   </class>  
-  <dependency id="10">    
-    <end type="SOURCE" refId="1"/>    
+  <dependency id="17">    
+    <end type="SOURCE" refId="16"/>    
+    <end type="TARGET" refId="13"/>  
+  </dependency>  
+  <dependency id="18">    
+    <end type="SOURCE" refId="16"/>    
     <end type="TARGET" refId="5"/>  
   </dependency>  
-  <association id="11">    
-    <end type="SOURCE" refId="8" navigable="false">      
-      <attribute id="12" name="parentServer">        
-        <position height="0" width="0" x="0" y="0"/>      
-      </attribute>      
-      <multiplicity id="13" minimum="0" maximum="1">        
-        <position height="0" width="0" x="0" y="0"/>      
-      </multiplicity>    
-    </end>    
-    <end type="TARGET" refId="9" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <association id="14">    
-    <end type="SOURCE" refId="5" navigable="false">      
-      <attribute id="15" name="errS">        
-        <position height="0" width="0" x="0" y="0"/>      
-      </attribute>      
-      <multiplicity id="16" minimum="0" maximum="1">        
-        <position height="0" width="0" x="0" y="0"/>      
-      </multiplicity>    
-    </end>    
-    <end type="TARGET" refId="1" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <association id="17">    
-    <end type="SOURCE" refId="2" navigable="false">      
-      <attribute id="18" name="parentServer">        
-        <position height="0" width="0" x="0" y="0"/>      
-      </attribute>      
-      <multiplicity id="19" minimum="0" maximum="1">        
-        <position height="0" width="0" x="0" y="0"/>      
-      </multiplicity>    
-    </end>    
-    <end type="TARGET" refId="9" navigable="true"/>    
-    <display labels="true" multiplicity="true"/>  
-  </association>  
-  <dependency id="20">    
-    <end type="SOURCE" refId="6"/>    
-    <end type="TARGET" refId="1"/>  
+  <dependency id="19">    
+    <end type="SOURCE" refId="13"/>    
+    <end type="TARGET" refId="16"/>  
   </dependency>  
-  <nesting id="21">    
-    <end type="SOURCE" refId="3"/>    
-    <end type="TARGET" refId="4"/>  
-  </nesting>  
-  <association id="22">    
-    <end type="SOURCE" refId="9" navigable="false">      
-      <attribute id="23" name="requestListener">        
+  <association id="20">    
+    <end type="SOURCE" refId="16" navigable="false">      
+      <attribute id="21" name="requestListener">        
         <position height="0" width="0" x="0" y="0"/>      
       </attribute>      
-      <multiplicity id="24" minimum="0" maximum="1">        
+      <multiplicity id="22" minimum="0" maximum="1">        
         <position height="0" width="0" x="0" y="0"/>      
       </multiplicity>    
     </end>    
-    <end type="TARGET" refId="8" navigable="true"/>    
+    <end type="TARGET" refId="15" navigable="true"/>    
     <display labels="true" multiplicity="true"/>  
   </association>  
-  <nesting id="25">    
-    <end type="SOURCE" refId="3"/>    
+  <generalization id="23">    
+    <end type="SOURCE" refId="5"/>    
+    <end type="TARGET" refId="3"/>  
+  </generalization>  
+  <dependency id="24">    
+    <end type="SOURCE" refId="2"/>    
+    <end type="TARGET" refId="8"/>  
+  </dependency>  
+  <dependency id="25">    
+    <end type="SOURCE" refId="5"/>    
+    <end type="TARGET" refId="16"/>  
+  </dependency>  
+  <nesting id="26">    
+    <end type="SOURCE" refId="6"/>    
     <end type="TARGET" refId="7"/>  
   </nesting>  
+  <dependency id="27">    
+    <bendpoint x="1094" y="682"/>    
+    <end type="SOURCE" refId="9"/>    
+    <end type="TARGET" refId="8"/>  
+  </dependency>  
+  <generalization id="28">    
+    <end type="SOURCE" refId="12"/>    
+    <end type="TARGET" refId="1"/>  
+  </generalization>  
+  <association id="29">    
+    <end type="SOURCE" refId="15" navigable="false">      
+      <attribute id="30" name="parentServer">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </attribute>      
+      <multiplicity id="31" minimum="0" maximum="1">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <generalization id="32">    
+    <end type="SOURCE" refId="13"/>    
+    <end type="TARGET" refId="3"/>  
+  </generalization>  
+  <dependency id="33">    
+    <end type="SOURCE" refId="5"/>    
+    <end type="TARGET" refId="1"/>  
+  </dependency>  
+  <generalization id="34">    
+    <end type="SOURCE" refId="11"/>    
+    <end type="TARGET" refId="1"/>  
+  </generalization>  
+  <dependency id="35">    
+    <end type="SOURCE" refId="2"/>    
+    <end type="TARGET" refId="14"/>  
+  </dependency>  
+  <dependency id="36">    
+    <end type="SOURCE" refId="9"/>    
+    <end type="TARGET" refId="4"/>  
+  </dependency>  
+  <association id="37">    
+    <end type="SOURCE" refId="14" navigable="false">      
+      <attribute id="38" name="errS">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </attribute>      
+      <multiplicity id="39" minimum="0" maximum="1">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="2" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting id="40">    
+    <end type="SOURCE" refId="6"/>    
+    <end type="TARGET" refId="10"/>  
+  </nesting>  
+  <dependency id="41">    
+    <end type="SOURCE" refId="9"/>    
+    <end type="TARGET" refId="2"/>  
+  </dependency>  
+  <association id="42">    
+    <bendpoint x="548" y="682"/>    
+    <end type="SOURCE" refId="3" navigable="false">      
+      <attribute id="43" name="parentServer">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </attribute>      
+      <multiplicity id="44" minimum="0" maximum="1">        
+        <position height="0" width="0" x="0" y="0"/>      
+      </multiplicity>    
+    </end>    
+    <end type="TARGET" refId="16" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <dependency id="45">    
+    <bendpoint x="237" y="682"/>    
+    <bendpoint x="237" y="1145"/>    
+    <end type="SOURCE" refId="3"/>    
+    <end type="TARGET" refId="11"/>  
+  </dependency>  
+  <dependency id="46">    
+    <bendpoint x="-34" y="1145"/>    
+    <end type="SOURCE" refId="5"/>    
+    <end type="TARGET" refId="12"/>  
+  </dependency>  
   <classifier-display autosize="true" stereotype="true" package="true" initial-value="true" signature="true" 
     sort-features="false" accessors="true" visibility="true">    
     <attributes public="true" package="true" protected="true" private="true" static="true"/>    

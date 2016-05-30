@@ -91,6 +91,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 		}
 
+		System.out.println("Read finished");
 		in.close();
 	}
 
@@ -160,9 +161,10 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		try {
 			readRequest();
 		} catch (ReceivedErrorException e) {
-			System.out.println("Received error packet. message: \n" + e.getMessage());
+			System.out.println("Received error packet. message: \n");
+			System.out.println(e.getErrorCode());
 		} catch (ErrorException e) {
-
+			
 			// Build the error
 			DatagramPacket err = buildError(e.getMessage().getBytes(), e.getErrorCode());
 

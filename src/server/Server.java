@@ -20,10 +20,12 @@ public class Server {
 	}
 
 	public void threadCreated() {
+		System.out.println("request opened");
 		threadCount++;
 	}
 
 	public void threadClosed() {
+		System.out.println("request closed");
 		threadCount--;
 	}
 

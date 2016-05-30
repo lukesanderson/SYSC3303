@@ -49,8 +49,11 @@ public class Client {
 	private static final int DATA_SIZE = 512;
 	private static final int PACKET_SIZE = 516;
 
-	protected static final int ILLEGAL_OPER_ERR_CODE = 4;
-	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
+	private static final int ILLEGAL_OPER_ERR_CODE = 4;
+	private static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
+
+	private static final int SERVER_LISTENER = 69;
+	private static final int INTERMEDIARY_LISTENER = 23;
 
 	private boolean transfering = true;
 	private boolean isNewData = true;
@@ -118,7 +121,23 @@ public class Client {
 				write(requestPacket);
 			}
 		} catch (ErrorException e) {
-			// CATCH ALL ERRORS FOR READ OR WRITE
+			// Build the error
+
+			System.out.println(e.getMessage());
+
+			DatagramPacket err = buildError(e.getMessage().getBytes(), e.getErrorCode());
+
+			// set port and address
+			err.setAddress(serverAddress);
+			err.setPort(serverPort);
+
+			// Send error
+			try {
+				sendReceiveSocket.send(err);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 	}
 
@@ -145,7 +164,7 @@ public class Client {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		requestPacket.setPort(23);
+		requestPacket.setPort(SERVER_LISTENER);
 
 		return requestPacket;
 	}
@@ -168,6 +187,8 @@ public class Client {
 
 		InetAddress dataAddress = dataPacket.getAddress();
 		int dataPort = dataPacket.getPort();
+
+		byte[] data = dataPacket.getData();
 
 		// Check its data
 		if (opcode == 3) {
@@ -196,6 +217,11 @@ public class Client {
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
+		System.out.println(data.length);
+		if (data[data.length - 1] == (byte) 0) {
+			transfering = false;
+		}
+
 		isNewData = true;
 		return false;
 
@@ -218,9 +244,6 @@ public class Client {
 			e2.printStackTrace();
 		}
 
-		serverAddress = request.getAddress();
-		serverPort = request.getPort();
-
 		byte[] incomingData = new byte[PACKET_SIZE];
 
 		DatagramPacket dataPacket = new DatagramPacket(incomingData, incomingData.length);
@@ -239,11 +262,13 @@ public class Client {
 		// get data1 to save address and port
 
 		dataPacket = receiveData();
-		try {
-			validateData(dataPacket, expectedBlockNum);
-		} catch (UnknownIDException e) {
-			// expected since servers new address and port is unknown
+
+		System.out.println("got packet: ");
+		for (byte b : dataPacket.getData()) {
+			System.out.print(b);
 		}
+		System.out.println();
+
 		// save port and address of client
 		serverAddress = dataPacket.getAddress();
 		serverPort = dataPacket.getPort();
@@ -255,6 +280,11 @@ public class Client {
 		// build and send ack
 		ackPacket = buildAckPacket(expectedBlockNum);
 		sendReceiveSocket.send(ackPacket);
+		System.out.println("sending packet: ");
+		for (byte b : ackPacket.getData()) {
+			System.out.print(b);
+		}
+		System.out.println();
 
 		expectedBlockNum++;
 
@@ -264,12 +294,17 @@ public class Client {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
+					System.out.println("got packet: ");
+					for (byte b : dataPacket.getData()) {
+						System.out.print(b);
+					}
+					System.out.println();
 				} catch (SocketTimeoutException e) {
 					System.out.println(
 							"Timeout receiving ack " + expectedBlockNum + " resending data " + expectedBlockNum);
 				}
 
-			} while (validateData(ackPacket, expectedBlockNum));
+			} while (validateData(dataPacket, expectedBlockNum));
 
 			serverAddress = dataPacket.getAddress();
 			serverPort = dataPacket.getPort();
@@ -282,10 +317,17 @@ public class Client {
 			ackPacket = buildAckPacket(receivedblockNum);
 
 			sendReceiveSocket.send(ackPacket);
+			System.out.println("sending packet: ");
+			for (byte b : ackPacket.getData()) {
+				System.out.print(b);
+			}
+			System.out.println();
 
 			expectedBlockNum++;
 		} while (transfering);
 		// transfer complete
+
+		System.out.println("read finished");
 
 		writer.close();
 
@@ -300,22 +342,19 @@ public class Client {
 	 */
 	private void write(DatagramPacket request) throws IOException, ErrorException {
 
+		// Send write request
 		request.getData()[1] = (byte) 2;
-
-		try {
-			sendReceiveSocket.send(request);
-		} catch (IOException e2) {
-			e2.printStackTrace();
-		}
+		sendReceiveSocket.send(request);
 
 		// Receive ack 0
 		DatagramPacket ackPacket = receiveAck();
 
-		try {
-			validateAck(ackPacket, 0);
-		} catch (UnknownIDException e) {
-			// expected
+		// check ack 0
+		System.out.println("received: ");
+		for (byte b : ackPacket.getData()) {
+			System.out.print(b);
 		}
+		System.out.println();
 
 		// Save server address and port
 		serverPort = ackPacket.getPort();
@@ -330,7 +369,16 @@ public class Client {
 		in = new BufferedInputStream(new FileInputStream(CLIENT_DIRECTORY + fname));
 
 		byte[] dataToSend = new byte[512];
+
+		// Data 1 is read
 		int sizeOfDataRead = in.read(dataToSend);
+
+		System.out.println("data 1: " + sizeOfDataRead);
+		for (byte b : dataToSend) {
+			System.out.print(b);
+		}
+		System.out.println();
+
 		int currentPacketNumber = 1;
 
 		while (transfering) {
@@ -350,30 +398,39 @@ public class Client {
 
 			sendReceiveSocket.send(dataPacket);
 
-			try {
-				request = receiveAck();
-			} catch (SocketTimeoutException e) {
-				System.out.println("timed out. resending data " + currentPacketNumber);
-				continue;
+			System.out.println("sent: ");
+
+			for (byte b : dataPacket.getData()) {
+				System.out.print(b);
 			}
+
+			System.out.println();
 
 			// Receive ack packet
 
 			do {
 				try {
 					ackPacket = receiveAck();
+
+					System.out.println("received: ");
+
+					for (byte b : ackPacket.getData()) {
+						System.out.print(b);
+					}
+
+					System.out.println();
+
 				} catch (SocketTimeoutException e) {
 					System.out.println(
 							"Timeout receiving ack " + currentPacketNumber + " resending data " + currentPacketNumber);
 				}
 
-				// validate ack
-				// validateAck(ackPacket, currentPacketNumber);
 			} while (validateAck(ackPacket, currentPacketNumber));
 
 			System.out.println("received ack " + request.getData()[3]);
 			dataToSend = new byte[512];
 
+			currentPacketNumber++;
 			sizeOfDataRead = in.read(dataToSend);
 			if (sizeOfDataRead == -1) {
 				// Trasnfering should end
@@ -432,6 +489,7 @@ public class Client {
 
 		// check the packet number matches what server is expecting
 		if (ackNumber < currentPacketNumber) {
+			System.out.println(ackNumber + "  " + currentPacketNumber);
 			System.out.println("received duplicate ack packet");
 			return true;
 			// ignore and send next data

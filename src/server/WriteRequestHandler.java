@@ -30,6 +30,14 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		DatagramPacket ackPacket = buildAckPacket(0);
 		inOutSocket.send(ackPacket);
 
+		System.out.println("sent: ");
+
+		for (byte b : ackPacket.getData()) {
+			System.out.print(b);
+		}
+
+		System.out.println();
+
 		File newFile = new File(SERVER_DIRECTORY + filename);
 
 		if (!newFile.exists()) {
@@ -50,11 +58,18 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
+					System.out.println("received: ");
+
+					for (byte b : dataPacket.getData()) {
+						System.out.print(b);
+					}
+
+					System.out.println();
 				} catch (SocketTimeoutException e) {
 					System.out.println("Timeout receiving ack " + currentBlock + " resending data " + currentBlock);
 				}
 
-			} while (validateData(ackPacket, currentBlock));
+			} while (validateData(dataPacket, currentBlock));
 
 			incomingData = dataPacket.getData();
 
@@ -66,9 +81,16 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			}
 
 			// Build ack
+			System.out.println(receivedNumber);
 			DatagramPacket ackPack = buildAckPacket(receivedNumber);
 			inOutSocket.send(ackPack);
-			System.out.println("Request Handler: " + "sent ack");
+
+			System.out.println("sent: ");
+			for (byte b : ackPacket.getData()) {
+				System.out.print(b);
+			}
+
+			System.out.println();
 
 		} while (transfering);
 		// transfer complete
@@ -116,6 +138,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
+		byte[] data = dataPacket.getData();
+
 		InetAddress dataAddress = dataPacket.getAddress();
 		int dataPort = dataPacket.getPort();
 
@@ -144,6 +168,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
+		}
+
+		if (data[data.length - 1] == (byte) 0) {
+			transfering = false;
 		}
 
 		isNewData = true;

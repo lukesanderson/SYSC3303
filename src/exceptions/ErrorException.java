@@ -12,6 +12,10 @@ public class ErrorException extends Exception {
 	
 	
 	public ErrorException(String message, int errCode){
+		System.out.println(message);
+
+		System.out.println(errCode);
+		
 		this.message = message;
 		this.errCode = errCode;
 	}

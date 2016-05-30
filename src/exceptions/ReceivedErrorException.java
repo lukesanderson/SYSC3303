@@ -17,7 +17,12 @@ public class ReceivedErrorException extends ErrorException {
 
 	public ReceivedErrorException(DatagramPacket errPacket) {
 		super(null, -1);
+
 		byte[] data = errPacket.getData();
+
+		for (byte b : data) {
+			System.out.print(b);
+		}
 
 		this.message = new String(data);
 	}
