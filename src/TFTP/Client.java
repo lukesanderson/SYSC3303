@@ -164,7 +164,7 @@ public class Client {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		requestPacket.setPort(SERVER_LISTENER);
+		requestPacket.setPort(INTERMEDIARY_LISTENER);
 
 		return requestPacket;
 	}

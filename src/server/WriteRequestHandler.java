@@ -81,9 +81,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			}
 
 			// Build ack
-			System.out.println(receivedNumber);
-			DatagramPacket ackPack = buildAckPacket(receivedNumber);
-			inOutSocket.send(ackPack);
+			ackPacket = buildAckPacket(receivedNumber);
 
 			System.out.println("sent: ");
 			for (byte b : ackPacket.getData()) {
@@ -91,6 +89,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			}
 
 			System.out.println();
+
+			inOutSocket.send(ackPacket);
+
+			currentBlock++;
 
 		} while (transfering);
 		// transfer complete
