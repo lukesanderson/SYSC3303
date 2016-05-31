@@ -20,7 +20,9 @@ public class RequestHandler {
 	protected boolean transfering = true;
 	protected boolean waitingForAck = true;
 
-	protected static final String SERVER_DIRECTORY = "C:\\Users\\Public\\Server\\";
+	//protected static final String SERVER_DIRECTORY = "C:\\Users\\Public\\Server\\";
+	//to check for error 2 
+	protected static final String SERVER_DIRECTORY = "F:\\JunkDataToFill\\";
 	protected static final int PACKET_SIZE = 516;
 	protected static final int DATA_SIZE = 512;
 
