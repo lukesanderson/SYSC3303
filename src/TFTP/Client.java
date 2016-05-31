@@ -27,7 +27,7 @@ import exceptions.ReceivedErrorException;
 import exceptions.UnknownIDException;
 
 public class Client {
-	DatagramPacket sendPacket, receivePacket; // creat two DatagramPacket to
+	DatagramPacket sendPacket, receivePacket; // create two DatagramPacket to
 												// send and receive data from
 												// and to the ErrSim
 	DatagramSocket sendReceiveSocket; // We only need one datagramsocket since
@@ -42,7 +42,7 @@ public class Client {
 
 	public static enum Decision {
 		RRQ, WRQ
-	}; // same for decision both enum are inputted in the consol of the client
+	}; // same for decision both enum are input in the console of the client
 
 	private static String fname;
 
