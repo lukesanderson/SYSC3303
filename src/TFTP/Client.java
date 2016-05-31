@@ -258,8 +258,6 @@ public class Client {
 			e2.printStackTrace();
 		}
 
-		byte[] incomingData = new byte[PACKET_SIZE];
-
 		DatagramPacket dataPacket;
 		DatagramPacket ackPacket = buildAckPacket(0);
 
@@ -269,6 +267,7 @@ public class Client {
 			newFile.createNewFile();
 		}
 
+		@SuppressWarnings("resource")
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 
 		// get data1 to save address and port
@@ -351,7 +350,6 @@ public class Client {
 		// transfer complete
 
 		System.out.println("read finished");
-		// newFile.deleteOnExit();
 		writer.close();
 
 	}

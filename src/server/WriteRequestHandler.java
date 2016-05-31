@@ -2,6 +2,7 @@ package server;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -53,7 +54,15 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		newFile.createNewFile();
 
-		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
+		BufferedOutputStream writer = null;
+
+		try {
+			writer = new BufferedOutputStream(new FileOutputStream(newFile));
+		} catch (Exception e) {
+			System.out.println("Client tried to write to read only space");
+			throw new ErrorException("You are trying to write to a read only space", ACCESS_DENIED_CODE);
+		}
+
 		do {
 			// receive and validate data
 			do {
