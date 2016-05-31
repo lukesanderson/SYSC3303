@@ -124,8 +124,8 @@ public class Client {
 						invalidFile = true;
 					}else{
 						invalidFile = false;
-					}
-					
+					}					
+
 				} catch (FileNotFoundException nF) {
 					System.out.println("The file " + fname + " does not exist in your directory:" + CLIENT_DIRECTORY);
 					System.out.println("Please choose a correct file to send.");
