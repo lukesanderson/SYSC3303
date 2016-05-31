@@ -7,18 +7,12 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 
 public class WriteRequestHandler extends RequestHandler implements Runnable {
-	private static int timeoutLim = 2;
 	private boolean isNewData = true;
-	private int timeout = 0;
-	private int currentBlock = 1;
-	private boolean resending = false;
 
 	public WriteRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
@@ -30,7 +24,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		byte[] incomingData = new byte[PACKET_SIZE];
 
 		DatagramPacket dataPacket = null;
-				//new DatagramPacket(incomingData, incomingData.length);
+		// new DatagramPacket(incomingData, incomingData.length);
 
 		// Build and send ack0
 		DatagramPacket ackPacket = buildAckPacket(0);
@@ -55,8 +49,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			newFile.createNewFile();
 		}
 
-
-
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 		do {
 			// receive and validate data
@@ -74,8 +66,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				} catch (SocketTimeoutException e) {
 					System.out.println("Timeout receiving Data " + currentBlock + " resending ack ");
 					timeout++;
-					if(timeout == timeoutLim){
-						throw new ErrorException("Timeout limit reached", 0);	
+					if (timeout == timeoutLim) {
+						throw new ErrorException("Timeout limit reached", 0);
 					}
 					resending = true;
 					break;
@@ -83,16 +75,13 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 			} while (validateData(dataPacket));
 
-			incomingData = dataPacket.getData();
-			System.out.println(incomingData.length);
-			
-			int receivedNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
-			
+			int receivedNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
+
 			// write block
 			if (resending == false) {
-				writer.write(dataPacket.getData(), 4, dataPacket.getLength()-1);
+				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
-			
+
 			// Build ack
 			ackPacket = buildAckPacket(receivedNumber);
 
@@ -104,8 +93,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			System.out.println();
 
 			inOutSocket.send(ackPacket);
-			if(resending == false){
-			currentBlock++;
+			if (resending == false) {
+				currentBlock++;
 			}
 			resending = false;
 
@@ -147,7 +136,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		DatagramPacket dataPacket = new DatagramPacket(data, data.length);
 
 		inOutSocket.receive(dataPacket);
-		
 
 		return dataPacket;
 	}
@@ -190,7 +178,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
-		if (data[data.length - 1] == (byte) 0) {
+		if (dataPacket.getLength() < 512) {
 			transfering = false;
 		}
 
@@ -208,7 +196,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			e.printStackTrace();
 		} catch (ReceivedErrorException e) {
 			System.out.println("\nReceived error packet.");
-			File q = new File(SERVER_DIRECTORY+getFileName(request.getData()));
+			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
 			q.delete();
 		} catch (ErrorException e) {
 
@@ -226,11 +214,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				// TODO error sending Error packet
 				e1.printStackTrace();
 			}
-			File q = new File(SERVER_DIRECTORY+getFileName(request.getData()));
+			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
 			q.delete();
 		}
-		
-		
+
 		inOutSocket.close();
 		parentServer.threadClosed();
 

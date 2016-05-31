@@ -26,7 +26,13 @@ public class RequestHandler {
 	protected static final int ILLEGAL_OPER_ERR_CODE = 4;
 	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
 	
-
+	protected static int timeoutLim = 2;
+	protected int timeout = 0;
+	protected int currentBlock = 1;
+	protected boolean resending = false;
+	
+	
+	
 	public RequestHandler(DatagramPacket request, Server parent) {
 		this.request = request;
 		parentServer = parent;

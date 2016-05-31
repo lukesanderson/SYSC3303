@@ -11,9 +11,10 @@ import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 
 public class ReadRequestHandler extends RequestHandler implements Runnable {
-	private static int timeoutLim = 2;
-	private int timeout = 0;
-	private boolean resending = false;
+
+	private int dataSize = 512;
+	private BufferedInputStream in;
+
 	public ReadRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
 		// TODO Auto-generated constructor stub
@@ -30,80 +31,101 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		String filename = getFileName(request.getData());
 		// printVerbose(request, false);
 
-		byte[] dataForPacket = new byte[PACKET_SIZE];
-		dataForPacket[0] = 0;
-		dataForPacket[1] = 3;
-
-		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress, clientPort);
+		byte[] dataForPacket;
+	
 		DatagramPacket ackPacket = null;
 
-		BufferedInputStream in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
+		in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
 
-		byte[] dataToSend = new byte[512];
-		int sizeOfDataRead = in.read(dataToSend);
-		int currentPacketNumber = 1;
+		byte[] dataToSend = new byte[dataSize];
+
+		// Data 1 is read
+		int sizeOfDataRead;
 
 		while (transfering) {
 
+			dataSize = in.available();
+			
+			if (dataSize >= DATA_SIZE) {
+				dataToSend = new byte[DATA_SIZE];
+			} else if (dataSize > 0) {
+				dataToSend = new byte[dataSize];
+			}
+
+			
+			sizeOfDataRead = in.read(dataToSend);
+
+			dataForPacket = new byte[4 + dataToSend.length];
+			dataForPacket[0] = 0;
+			dataForPacket[1] = 3;
 			// Add block number to packet data
-			dataForPacket[2] = (byte) ((currentPacketNumber >> 8) & 0xFF);
-			dataForPacket[3] = (byte) (currentPacketNumber & 0xFF);
+			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
+			dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
+			
 			// Copy the data from the file into the packet data
-			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
-
+			if (dataForPacket.length > 4) {
+				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+			}
+			
+			
 			// Set packet data
-			dataPacket.setData(dataForPacket);
-			System.out.println("sending data " + currentPacketNumber + " of size: " + sizeOfDataRead);
 
+			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
 			// PRINT DATA HERE
 
 			// Send data Packet
-			try {
-				inOutSocket.send(dataPacket);
-			} catch (SocketTimeoutException e) {
-				System.out.println("Timeout sending packet data " + currentPacketNumber);
+			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress,
+					clientPort);
+			
+			inOutSocket.send(dataPacket);
+
+			System.out.println("sent: ");
+
+			for (byte b : dataPacket.getData()) {
+				System.out.print(b);
 			}
+
+			System.out.println();
 
 			// Receive ack packet
 
 			do {
 				try {
 					ackPacket = receiveAck();
-				} catch (SocketTimeoutException e) {
-					System.out.println(
-							"Timeout receiving ack " + currentPacketNumber + " resending data ");
-					timeout++;
-					if(timeout == timeoutLim){
-					throw new ErrorException("Timeout limit reached", 0);
+					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
+					System.out.println("received ack " + ackNum);
+
+					System.out.println("received: ");
+
+					for (byte b : ackPacket.getData()) {
+						System.out.print(b);
 					}
-					
+
+					System.out.println();
+
+				} catch (SocketTimeoutException e) {
+					System.out.println("Timeout receiving ack " + currentBlock + " resending data ");
+					timeout++;
+					if (timeout == timeoutLim) {
+						throw new ErrorException("Timeout limit reached", 0);
+					}
+
 					resending = true;
 					break;
 				}
+			} while (validateAck(ackPacket));
 
-				// validate ack
-				// validateAck(ackPacket, currentPacketNumber);
-			} while (validateAck(ackPacket, currentPacketNumber));
-
-			// System.out.println("received ack " + request.getData()[3]);
-			if(resending == false){
-			dataToSend = new byte[512];
-			
-			sizeOfDataRead = in.read(dataToSend);
-			if (sizeOfDataRead == -1) {
-				// Trasnfering should end
+			currentBlock++;
+			if (sizeOfDataRead < 512) {
+				// Transferring should end
 				transfering = false;
 			}
-			
-			currentPacketNumber++;
-			
-			}
-			resending = false;
-		}
 
-		System.out.println("Read finished");
+		}
 		in.close();
+		System.out.println("Read finished");
+		
 	}
 
 	/**
@@ -127,7 +149,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 	 * @param currentPacketNumber
 	 * @return
 	 */
-	protected boolean validateAck(DatagramPacket ackPacket, int currentPacketNumber) throws ErrorException {
+	protected boolean validateAck(DatagramPacket ackPacket) throws ErrorException {
 
 		int opcode = ((ackPacket.getData()[0] & 0xff) << 8) | (ackPacket.getData()[1] & 0xff);
 		int ackNumber = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
@@ -154,11 +176,11 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		}
 
 		// check the packet number matches what server is expecting
-		if (ackNumber < currentPacketNumber) {
+		if (ackNumber < currentBlock) {
 			System.out.println("received duplicate ack packet");
 			return true;
 			// ignore and send next data
-		} else if (ackNumber > currentPacketNumber) {
+		} else if (ackNumber > currentBlock) {
 			System.out.println("received ack from the future");
 			throw new ErrorException("received ack from the future", ILLEGAL_OPER_ERR_CODE);
 		}
@@ -175,7 +197,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			System.out.println("Received error packet. message: \n");
 			System.out.println(e.getErrorCode());
 		} catch (ErrorException e) {
-			
+
 			// Build the error
 			DatagramPacket err = buildError(e.getMessage().getBytes(), e.getErrorCode());
 

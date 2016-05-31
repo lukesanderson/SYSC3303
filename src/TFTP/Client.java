@@ -228,7 +228,7 @@ public class Client {
 		}
 
 		// System.out.println(data.length);
-		if (data[data.length - 1] == (byte) 0) {
+		if (dataPacket.getLength() < 512) {
 			transfering = false;
 		}
 
@@ -284,9 +284,7 @@ public class Client {
 		if (resending == false) {
 			writer.write(incomingData, 4, DATA_SIZE);
 		}
-		// else{
-		// isNewData = true;
-		// }
+
 		// build and send ack
 		ackPacket = buildAckPacket(currentBlock);
 		sendReceiveSocket.send(ackPacket);
@@ -304,8 +302,7 @@ public class Client {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					System.out.println(currentBlock);
-					System.out.println("got packet: ");
+					System.out.println("received: ");
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
 					}
@@ -314,35 +311,31 @@ public class Client {
 					System.out.println(
 
 					"Timeout receiving data " + currentBlock + " resending previous ack ");
-
 					timeout++;
 					resending = true;
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
 					}
+					resending = true;
 					break;
 				}
 
 			} while (validateData(dataPacket));
 
-			serverAddress = dataPacket.getAddress();
-			serverPort = dataPacket.getPort();
-
-			incomingData = dataPacket.getData();
-			int receivedblockNum = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
+			int receivedblockNum = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
 			if (resending == false) {
-				writer.write(incomingData, 4, DATA_SIZE);
+				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
+			// Build the Ack
 			ackPacket = buildAckPacket(receivedblockNum);
 
-			sendReceiveSocket.send(ackPacket);
 			System.out.println("sending packet: ");
 			for (byte b : ackPacket.getData()) {
 				System.out.print(b);
 			}
 			System.out.println();
-
+			sendReceiveSocket.send(ackPacket);
 			if (resending == false) {
 				currentBlock++;
 			}
@@ -351,7 +344,7 @@ public class Client {
 		// transfer complete
 
 		System.out.println("read finished");
-
+		//newFile.deleteOnExit();
 		writer.close();
 
 	}
@@ -384,33 +377,49 @@ public class Client {
 		serverAddress = ackPacket.getAddress();
 
 		// Set up data packet and stream to create files.
-		byte[] dataForPacket = new byte[4 + dataSize];
-		dataForPacket[0] = 0;
-		dataForPacket[1] = 3;
-		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress, serverPort);
+		byte[] dataForPacket;
+
+		// DatagramPacket dataPacket = new DatagramPacket(dataForPacket,
+		// dataForPacket.length, serverAddress, serverPort);
 
 		in = new BufferedInputStream(new FileInputStream(CLIENT_DIRECTORY + fname));
 
 		byte[] dataToSend = new byte[dataSize];
 
 		// Data 1 is read
-		int sizeOfDataRead = in.read(dataToSend);
+		int sizeOfDataRead;
 
 		while (transfering) {
 			// iterate the file in 512 byte chunks
 			// Each iteration send the packet and receive the ack to match block
 			// number i
+			dataSize = in.available();
+			if (dataSize >= DATA_SIZE) {
+				dataToSend = new byte[DATA_SIZE];
+			} else if (dataSize > 0) {
+				dataToSend = new byte[dataSize];
+			}
 
+			sizeOfDataRead = in.read(dataToSend);
+
+			dataForPacket = new byte[4 + dataToSend.length];
+			dataForPacket[0] = 0;
+			dataForPacket[1] = 3;
 			// Add block number to packet data
 			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
 			dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
 			// Copy the data from the file into the packet data
-			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+			if (dataForPacket.length > 4) {
+				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+			}
 
-			dataPacket.setData(dataForPacket);
-			System.out.println("sending data " + currentBlock + " of size: " + sizeOfDataRead);
-
+			
+			
+			// dataPacket.setData(dataForPacket);
+			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
+			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
+					serverPort);
 			sendReceiveSocket.send(dataPacket);
 
 			System.out.println("sent: ");
@@ -444,24 +453,19 @@ public class Client {
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
 					}
+					resending = true;
 					break;
 				}
 
 			} while (validateAck(ackPacket));
 
-			
-		
-			dataToSend = new byte[dataSize];
-
 			currentBlock++;
-			sizeOfDataRead = in.read(dataToSend);
-			if (sizeOfDataRead == -1) {
+
+			if (sizeOfDataRead < 512) {
 				// Transferring should end
 				transfering = false;
 			}
-			else if (sizeOfDataRead <= 512){
-				dataSize = sizeOfDataRead;
-			}
+
 		}
 		in.close();
 	}
