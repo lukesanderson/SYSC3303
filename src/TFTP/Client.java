@@ -399,6 +399,7 @@ public class Client {
 
 		// Receive ack 0
 		DatagramPacket ackPacket = receiveAck();
+		validateAck(ackPacket);
 
 		// check ack 0
 		System.out.println("received: ");
@@ -547,7 +548,7 @@ public class Client {
 		}
 
 		// Check Address and port
-		if (ackPort != serverPort || !ackAddress.equals(serverAddress)) {
+		if ((ackPort != serverPort || !ackAddress.equals(serverAddress)) && ackNumber > 0) {
 			sendUnknownIDError(ackAddress, ackPort);
 			return true;
 		}
