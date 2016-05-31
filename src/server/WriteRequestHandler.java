@@ -84,13 +84,13 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			} while (validateData(dataPacket));
 
 			incomingData = dataPacket.getData();
-			System.out.println(incomingData.length);
+			System.out.println(dataPacket.getLength());
 			
 			int receivedNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
 			
 			// write block
 			if (resending == false) {
-				writer.write(dataPacket.getData(), 4, dataPacket.getLength()-1);
+				writer.write(dataPacket.getData(), 4, dataPacket.getLength()-4);
 			}
 			
 			// Build ack
@@ -190,7 +190,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
-		if (data[data.length - 1] == (byte) 0) {
+		if (dataPacket.getLength() < 512) {
 			transfering = false;
 		}
 

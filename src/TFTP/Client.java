@@ -384,33 +384,47 @@ public class Client {
 		serverAddress = ackPacket.getAddress();
 
 		// Set up data packet and stream to create files.
-		byte[] dataForPacket = new byte[4 + dataSize];
-		dataForPacket[0] = 0;
-		dataForPacket[1] = 3;
-		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress, serverPort);
+		byte[] dataForPacket;
+	
+		//DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress, serverPort);
 
 		in = new BufferedInputStream(new FileInputStream(CLIENT_DIRECTORY + fname));
 
 		byte[] dataToSend = new byte[dataSize];
-
+		
 		// Data 1 is read
-		int sizeOfDataRead = in.read(dataToSend);
+		int sizeOfDataRead;
 
 		while (transfering) {
 			// iterate the file in 512 byte chunks
 			// Each iteration send the packet and receive the ack to match block
 			// number i
-
+			dataSize = in.available();
+			if(dataSize >= 512){
+			dataToSend = new byte[512];
+			}
+			else if(dataSize > 0){
+				dataToSend = new byte[dataSize];
+			}
+		
+			sizeOfDataRead = in.read(dataToSend);
+			
+			
+			dataForPacket = new byte[4 + dataToSend.length];
+			dataForPacket[0] = 0;
+			dataForPacket[1] = 3;
 			// Add block number to packet data
 			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
 			dataForPacket[3] = (byte) (currentBlock & 0xFF);
-
+			
 			// Copy the data from the file into the packet data
-			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+			if(dataForPacket.length > 4){
+			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length-1);
+			}
 
-			dataPacket.setData(dataForPacket);
-			System.out.println("sending data " + currentBlock + " of size: " + sizeOfDataRead);
-
+			//dataPacket.setData(dataForPacket);
+			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
+			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress, serverPort);
 			sendReceiveSocket.send(dataPacket);
 
 			System.out.println("sent: ");
@@ -450,18 +464,14 @@ public class Client {
 			} while (validateAck(ackPacket));
 
 			
-		
-			dataToSend = new byte[dataSize];
-
 			currentBlock++;
-			sizeOfDataRead = in.read(dataToSend);
-			if (sizeOfDataRead == -1) {
+			
+			
+			if (sizeOfDataRead < 512) {
 				// Transferring should end
 				transfering = false;
 			}
-			else if (sizeOfDataRead <= 512){
-				dataSize = sizeOfDataRead;
-			}
+			
 		}
 		in.close();
 	}
