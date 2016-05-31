@@ -11,6 +11,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -63,6 +64,7 @@ public class Client {
 	private boolean isNewData = true;
 	private InetAddress serverAddress;
 	private int serverPort;
+	private boolean invalidFile = true;
 
 	public Client() {
 		try {
@@ -109,12 +111,38 @@ public class Client {
 		// gets a file directory from the user
 		System.out.println("Please choose a file to modify.  Type in a file name: ");
 
-		fname = input.nextLine();
+		// Checks for file size, and if file exists in directory
+		if (request == Decision.WRQ) {
+			while (invalidFile) {
+				fname = input.nextLine();
+				try {
+					FileInputStream localFile = new FileInputStream(CLIENT_DIRECTORY + fname);
+					BufferedInputStream in = new BufferedInputStream(localFile);
+					if (in.available() >= 1000000) {
+						System.out.println("Your selected file is too big.");
+						System.out.println("Please select a file less than 1 mB");
+						invalidFile = true;
+					} else {
+						invalidFile = false;
+					}
+
+				} catch (FileNotFoundException nF) {
+					System.out.println("The file " + fname + " does not exist in your directory:" + CLIENT_DIRECTORY);
+					System.out.println("Please choose a correct file to send.");
+					invalidFile = true;
+				}
+			}
+
+		} else {
+			fname = input.nextLine();
+		}
 
 		DatagramPacket requestPacket = buildRequest(fname.getBytes());
 
 		// decide if it s a read or a write
-		try {
+		try
+
+		{
 
 			if (request == Decision.RRQ) {
 				System.out.println("Client:" + fname + ", receive in " + mode + " mode.\n");
@@ -124,13 +152,14 @@ public class Client {
 				System.out.println("Client:" + fname + ", send in " + mode + " mode.\n");
 				write(requestPacket);
 			}
-		} catch (ReceivedErrorException e) {
+		} catch (ReceivedErrorException e)
+
+		{
 			System.out.println("\nReceived error: "); // fix this
-			System.out.println(e.getMessage());
-			/**
-			 * TODO DELETE FILE IF ERROR
-			 * 
-			 */
+			System.out.println(e.getMessage());/**
+												 * TODO DELETE FILE IF ERROR
+												 * 
+												 */
 
 		}
 
@@ -440,6 +469,10 @@ public class Client {
 				try {
 					ackPacket = receiveAck();
 					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
+					if (ackNum > 127) {
+						ackNum = ackNum + 126;
+					}
+
 					System.out.println("received ack " + ackNum);
 
 					System.out.println("received: ");

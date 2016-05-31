@@ -24,22 +24,19 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		String filename = getFileName(request.getData());
 
-		File newFile = new File(SERVER_DIRECTORY + filename);
-		 
-		long freeSpace = newFile.getFreeSpace();
+		File newFile = new File(ROOT + SERVER_DIRECTORY + filename);
+		File disk = new File(ROOT);
 
-		if( freeSpace <512){
+		long freeSpace = disk.getFreeSpace();
+
+		System.out.println(freeSpace);
+
+		if (freeSpace < 512) {
 			System.out.println("Space is full on the disk");
 			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
-			
+
 		}
-		
-		
-		
-		
-		
-		
-		
+
 		/**
 		 * 
 		 * UNCOMMENT FOR FILE CHECKING
@@ -105,13 +102,13 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 			int receivedNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
-			freeSpace = newFile.getFreeSpace();
-			if( freeSpace < dataPacket.getLength()){
+			freeSpace = disk.getFreeSpace();
+			if (freeSpace < dataPacket.getLength()) {
 				System.out.println("Not enough space on disk for file");
 				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
-				
+
 			}
-			
+
 			// write block
 			if (resending == false) {
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
@@ -192,7 +189,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			// Not data or error
 			throw new ErrorException("\nReceived an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
 		}
-		
 
 		// Check Address and port
 		if (dataPort != clientPort || !dataAddress.equals(clientAddress)) {
