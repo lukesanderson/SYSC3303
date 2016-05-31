@@ -1,5 +1,6 @@
 package server;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -20,7 +21,7 @@ public class RequestHandler {
 	protected boolean transfering = true;
 	protected boolean waitingForAck = true;
 
-	protected static final String SERVER_DIRECTORY = "C:\\Users\\Public\\Server\\";
+	public static final String SERVER_DIRECTORY = System.getProperty("user.dir") + File.separator + "src" + File.separator + "server" + File.separator;
 	//to check for error 2 
 	//protected static final String SERVER_DIRECTORY = "F:\\JunkDataToFill\\";
 	protected static final int PACKET_SIZE = 516;
