@@ -68,8 +68,14 @@ public class ErrorInit {
 			clientPort = receivePacket.getPort();
 			vQ.printThis(false, "\nHost port: " + clientPort);
 			vQ.printThis(false, "\nLength: " + receivePacket.getLength());
-			//vQ.printThis(false, "\nContaining: \n");
+			vQ.printThis(false, "\nContaining: \n");
            // vQ.printThis(false, new String(receivePacket.getData()));
+			
+			if(eS.verboseMode){
+			for (int j=0;j<receivePacket.getLength();j++) {
+	            System.out.println("byte " + j + " " + data[j]);
+	        }
+			}
             
 
             // New Thread for Error Sim

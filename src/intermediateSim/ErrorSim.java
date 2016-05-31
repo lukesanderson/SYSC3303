@@ -34,7 +34,8 @@ public class ErrorSim implements Runnable {
 	private int blockNum;
 	private int opCode;
 	private int mode;
-
+	private int corruption;
+	private boolean newError = true;
 	/**
 	 * Constructor for the ErrorSim that is passed the initial packet and client port,
 	 * as well as the user input need to select which error to create.	
@@ -49,7 +50,7 @@ public class ErrorSim implements Runnable {
 		this.blockNum = eS.blockNum; //Holds the block which the user wishes to alter
 		this.opCode = eS.OpCode; //Holds the user input for Ack or DATA
 		this.mode = eS.mode; //Holds the type of error the user wants to create
-		
+		this.corruption = eS.corruption;
 		try {
 			sendReceiveSocket = new DatagramSocket();
 			
@@ -115,7 +116,7 @@ public class ErrorSim implements Runnable {
 		
 		//Checks if the packet is Data packet, and the block number we want,
 		//then generates the selected error if we wanted to.
-		if (blockNumber == blockNum && opcode == DATA && opCode == 02) {
+		if (blockNumber == blockNum && opcode == DATA && opCode == 02 && newError) {
 			if (mode == 01) {
 				System.out.println("Packet lost."); //Dont send anything to simulate losing a packet
 			} else if (mode == 03) {
@@ -126,7 +127,7 @@ public class ErrorSim implements Runnable {
 				System.out.println("Delayed the packet for 2.5 seconds"); //Delay the packet 2.5 seconds
 				Delay(receivePacket);
 			} else if(mode == 04){
-				receivePacket = newMode(receivePacket); //Change the mode to simulate an invalid opcode
+				receivePacket = newMode(receivePacket, corruption); //Change the mode to simulate an invalid opcode
 				sendPacket(receivePacket);
 				System.out.println("Opcode has been altered");
 			}else if(mode == 05){
@@ -136,11 +137,12 @@ public class ErrorSim implements Runnable {
 			}else { //send normally
 				sendPacket(receivePacket);
 			}
+			newError = false;
 		
 		}
 		//If the packet is an ACK packet, and the block number we want,
 		//then generates the selected error if we wanted to.
-		else if (blockNumber == blockNum && opcode == ACK && opCode == 01) {
+		else if (blockNumber == blockNum && opcode == ACK && opCode == 01 && newError) {
 			if (mode == 01) {
 				System.out.println("Packet lost.");
 			} else if (mode == 03) {
@@ -151,7 +153,7 @@ public class ErrorSim implements Runnable {
 				System.out.println("Delayed the packet for 2.5 seconds");
 				Delay(receivePacket);
 			} else if(mode == 04){
-				receivePacket = newMode(receivePacket);
+				receivePacket = newMode(receivePacket, corruption);
 				sendPacket(receivePacket);
 				System.out.println("Opcode has been altered.");
 			}else if(mode == 05){
@@ -161,6 +163,7 @@ public class ErrorSim implements Runnable {
 			} else { //send normally
 				sendPacket(receivePacket);
 			}
+			newError = false;
 		} else { //If it is not the packet we are looking to change, send it normally
 			sendPacket(receivePacket);
 		}
@@ -175,12 +178,29 @@ public class ErrorSim implements Runnable {
 	 * but currently we generate the error only by invalidating the opcode.
 	 * 
 	 * @param receivedPacket
+	 * @param corruption
 	 * @return receivedPacket
 	 */
-	private DatagramPacket newMode(DatagramPacket receivedPacket){
+	private DatagramPacket newMode(DatagramPacket receivedPacket, int corruption){
 		byte[] packetData = receivedPacket.getData();
+		if(corruption == 1){
 		packetData[0] = 9;
 		packetData[1] = 9;
+		}
+		//else if(corruption == 2){
+			//System.arraycopy(packetData, 3, packetData, 50, 600);
+		//}
+		else if(corruption == 3){
+			if (packetData[1] == 3){
+				packetData[1] = 4;
+			}
+			else if(packetData[1] == 4){
+				packetData[1] = 3;
+			}
+		}
+		//else if(corruption == 4){
+			//packetData = null;
+		//}
 		receivedPacket.setData(packetData);
 		return receivedPacket;
 	}

@@ -25,6 +25,7 @@ public class RequestHandler {
 	protected static final int DATA_SIZE = 512;
 	protected static final int ILLEGAL_OPER_ERR_CODE = 4;
 	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
+	
 
 	public RequestHandler(DatagramPacket request, Server parent) {
 		this.request = request;
@@ -35,7 +36,7 @@ public class RequestHandler {
 
 		try {
 			inOutSocket = new DatagramSocket();
-			inOutSocket.setSoTimeout(100000);
+			inOutSocket.setSoTimeout(2000);
 		} catch (SocketException e) {
 			System.out.println("Request Handler: " + "Unable to create a socket to handle request");
 			e.printStackTrace();

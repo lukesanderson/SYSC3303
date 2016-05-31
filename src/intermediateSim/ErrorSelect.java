@@ -16,6 +16,7 @@ public class ErrorSelect {
 	public int OpCode = -1;
 	public int mode = -1;
 	private int vq = -1;
+	public int corruption = -1;
 	public boolean verboseMode = true;
 	private static final Scanner READER = new Scanner(System.in);
 
@@ -108,6 +109,34 @@ public class ErrorSelect {
 				System.out.println("invalid choice. Please try again.");
 				mode = -1;
 
+			}
+			
+			if (mode == 04){
+				System.out.println("How would you like to corrupt the selected packet?");
+				System.out.println("01: corrupt the Opcode");
+				//System.out.println("02: corrupt the data");
+				System.out.println("03: send as opposite operation (i.e if its an ACK, send as data)");
+				//System.out.println("04: Nullify the packet");
+				while(corruption == -1){
+					String corrupt = READER.nextLine(); // reads the input String
+					if (corrupt.equalsIgnoreCase("01")){
+						corruption = 1;
+					}
+					else if(corrupt.equalsIgnoreCase("02")){ //data corrupt
+						corruption = 2;
+					}
+					else if(corrupt.equalsIgnoreCase("03")){ //change mode
+						corruption = 3;
+					}
+					else if(corrupt.equalsIgnoreCase("04")){
+						corruption = 4;
+					}
+					else{
+						System.out.println("invalid choice. Please try again.");
+						corruption = -1;
+					}
+					
+				}
 			}
 		}
 	}

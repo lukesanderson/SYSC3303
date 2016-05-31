@@ -38,6 +38,7 @@ public class Listener implements Runnable {
 			DatagramPacket request = new DatagramPacket(requestData, requestData.length);
 			try {
 				System.out.println("Listener: " + "Listener waiting for request");
+				System.out.println("Press (Q) to shutdown server");
 				socket.receive(request);
 
 				byte[] data = request.getData();

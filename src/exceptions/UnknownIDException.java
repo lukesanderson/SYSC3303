@@ -14,7 +14,7 @@ public class UnknownIDException extends ErrorException {
 	private static final int ERR_CODE = 5;
 
 	public UnknownIDException(InetAddress invAddress, int invPort) {
-		super("Received unkown id with address: " + invAddress + " and port " + invPort, ERR_CODE);
+		super("Received unknown id with address: " + invAddress + " and port " + invPort, ERR_CODE);
 
 		this.invAddress = invAddress;
 		this.invPort = invPort;

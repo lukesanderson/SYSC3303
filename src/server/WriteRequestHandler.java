@@ -7,13 +7,18 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 
 public class WriteRequestHandler extends RequestHandler implements Runnable {
-
+	private static int timeoutLim = 2;
 	private boolean isNewData = true;
+	private int timeout = 0;
+	private int currentBlock = 1;
+	private boolean resending = false;
 
 	public WriteRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
@@ -24,7 +29,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		String filename = getFileName(request.getData());
 		byte[] incomingData = new byte[PACKET_SIZE];
 
-		DatagramPacket dataPacket = new DatagramPacket(incomingData, incomingData.length);
+		DatagramPacket dataPacket = null;
+				//new DatagramPacket(incomingData, incomingData.length);
 
 		// Build and send ack0
 		DatagramPacket ackPacket = buildAckPacket(0);
@@ -49,7 +55,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			newFile.createNewFile();
 		}
 
-		int currentBlock = 1;
+
 
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 		do {
@@ -66,20 +72,27 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 					System.out.println();
 				} catch (SocketTimeoutException e) {
-					System.out.println("Timeout receiving ack " + currentBlock + " resending data " + currentBlock);
+					System.out.println("Timeout receiving Data " + currentBlock + " resending ack ");
+					timeout++;
+					if(timeout == timeoutLim){
+						throw new ErrorException("Timeout limit reached", 0);	
+					}
+					resending = true;
+					break;
 				}
 
-			} while (validateData(dataPacket, currentBlock));
+			} while (validateData(dataPacket));
 
 			incomingData = dataPacket.getData();
-
+			System.out.println(incomingData.length);
+			
 			int receivedNumber = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
-
+			
 			// write block
-			if (isNewData) {
-				writer.write(incomingData, 4, DATA_SIZE);
+			if (resending == false) {
+				writer.write(dataPacket.getData(), 4, dataPacket.getLength()-1);
 			}
-
+			
 			// Build ack
 			ackPacket = buildAckPacket(receivedNumber);
 
@@ -91,13 +104,16 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			System.out.println();
 
 			inOutSocket.send(ackPacket);
-
+			if(resending == false){
 			currentBlock++;
+			}
+			resending = false;
 
 		} while (transfering);
 		// transfer complete
 
 		System.out.println("Finished");
+		newFile.deleteOnExit();
 		writer.close();
 
 	}
@@ -131,11 +147,12 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		DatagramPacket dataPacket = new DatagramPacket(data, data.length);
 
 		inOutSocket.receive(dataPacket);
+		
 
 		return dataPacket;
 	}
 
-	private boolean validateData(DatagramPacket dataPacket, int currentBlock) throws ErrorException {
+	private boolean validateData(DatagramPacket dataPacket) throws ErrorException {
 
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
@@ -153,7 +170,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			throw new ReceivedErrorException(dataPacket);
 		} else {
 			// Not data or error
-			throw new ErrorException("Received an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
+			throw new ErrorException("\nReceived an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
 		}
 
 		// Check Address and port
@@ -166,6 +183,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		if (dataNumber < currentBlock) {
 			System.out.println("received duplicate data packet");
 			isNewData = false;
+			currentBlock--;
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");
@@ -189,7 +207,9 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ReceivedErrorException e) {
-			System.out.println("Received error packet. message: \n" + e.getMessage());
+			System.out.println("\nReceived error packet.");
+			File q = new File(SERVER_DIRECTORY+getFileName(request.getData()));
+			q.delete();
 		} catch (ErrorException e) {
 
 			// Build the error
@@ -206,8 +226,11 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				// TODO error sending Error packet
 				e1.printStackTrace();
 			}
+			File q = new File(SERVER_DIRECTORY+getFileName(request.getData()));
+			q.delete();
 		}
-
+		
+		
 		inOutSocket.close();
 		parentServer.threadClosed();
 

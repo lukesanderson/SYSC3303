@@ -20,15 +20,15 @@ public class ReceivedErrorException extends ErrorException {
 
 		byte[] data = errPacket.getData();
 
-		for (byte b : data) {
-			System.out.print(b);
-		}
+		//for (byte b : data) {
+			//System.out.print(b);
+		//}
 
 		this.message = new String(data);
 	}
 
-	public String getMessage() {
-		return this.message;
-	}
+	//public String getMessage() {
+		//return this.message;
+	//}
 
 }

@@ -48,13 +48,17 @@ public class Client {
 	private static final String CLIENT_DIRECTORY = "C:\\Users\\Public\\";
 	private static final int DATA_SIZE = 512;
 	private static final int PACKET_SIZE = 516;
+	private static int timeoutLim = 2;
+	private int timeout = 0;
+	private boolean resending = false;
+	private int currentBlock = 1;
 
 	private static final int ILLEGAL_OPER_ERR_CODE = 4;
 	private static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
 
 	private static final int SERVER_LISTENER = 69;
-	private static final int INTERMEDIARY_LISTENER = 23;
-
+	private static final int INTERMEDIARY_LISTENER = 69;
+	private int dataSize = 512;
 	private boolean transfering = true;
 	private boolean isNewData = true;
 	private InetAddress serverAddress;
@@ -63,7 +67,7 @@ public class Client {
 	public Client() {
 		try {
 			sendReceiveSocket = new DatagramSocket(); // creat the datagram
-			sendReceiveSocket.setSoTimeout(100000); // socket
+			sendReceiveSocket.setSoTimeout(2000); // socket
 		} catch (SocketException se) { // catch Socket exception error if
 										// applicable
 			se.printStackTrace();
@@ -120,7 +124,11 @@ public class Client {
 				System.out.println("Client:" + fname + ", send in " + mode + " mode.\n");
 				write(requestPacket);
 			}
-		} catch (ErrorException e) {
+		} catch (ReceivedErrorException e) {
+			System.out.println("\nReceived a timeout error"); // fix this
+		}
+
+		catch (ErrorException e) {
 			// Build the error
 
 			System.out.println(e.getMessage());
@@ -180,7 +188,7 @@ public class Client {
 		return dataPacket;
 	}
 
-	private boolean validateData(DatagramPacket dataPacket, int currentBlock) throws ErrorException {
+	private boolean validateData(DatagramPacket dataPacket) throws ErrorException {
 
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
@@ -210,19 +218,20 @@ public class Client {
 		// check the packet number matches what server is expecting
 		if (dataNumber < currentBlock) {
 			System.out.println("received duplicate data packet");
-			isNewData = false;
+
+			currentBlock--;
+
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
-		System.out.println(data.length);
+		// System.out.println(data.length);
 		if (data[data.length - 1] == (byte) 0) {
 			transfering = false;
 		}
 
-		isNewData = true;
 		return false;
 
 	}
@@ -257,8 +266,6 @@ public class Client {
 
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 
-		int expectedBlockNum = 1;
-
 		// get data1 to save address and port
 
 		dataPacket = receiveData();
@@ -274,11 +281,14 @@ public class Client {
 		serverPort = dataPacket.getPort();
 
 		// write data
-		if (isNewData) {
+		if (resending == false) {
 			writer.write(incomingData, 4, DATA_SIZE);
 		}
+		// else{
+		// isNewData = true;
+		// }
 		// build and send ack
-		ackPacket = buildAckPacket(expectedBlockNum);
+		ackPacket = buildAckPacket(currentBlock);
 		sendReceiveSocket.send(ackPacket);
 		System.out.println("sending packet: ");
 		for (byte b : ackPacket.getData()) {
@@ -286,7 +296,7 @@ public class Client {
 		}
 		System.out.println();
 
-		expectedBlockNum++;
+		currentBlock++;
 
 		do {
 			// receive and validate data
@@ -294,6 +304,7 @@ public class Client {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
+					System.out.println(currentBlock);
 					System.out.println("got packet: ");
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
@@ -301,10 +312,18 @@ public class Client {
 					System.out.println();
 				} catch (SocketTimeoutException e) {
 					System.out.println(
-							"Timeout receiving ack " + expectedBlockNum + " resending data " + expectedBlockNum);
+
+					"Timeout receiving data " + currentBlock + " resending previous ack ");
+
+					timeout++;
+					resending = true;
+					if (timeout == timeoutLim) {
+						throw new ErrorException("Timeout limit reached", 0);
+					}
+					break;
 				}
 
-			} while (validateData(dataPacket, expectedBlockNum));
+			} while (validateData(dataPacket));
 
 			serverAddress = dataPacket.getAddress();
 			serverPort = dataPacket.getPort();
@@ -312,8 +331,9 @@ public class Client {
 			incomingData = dataPacket.getData();
 			int receivedblockNum = ((incomingData[2] & 0xff) << 8) | (incomingData[3] & 0xff);
 
-			writer.write(incomingData, 4, DATA_SIZE);
-
+			if (resending == false) {
+				writer.write(incomingData, 4, DATA_SIZE);
+			}
 			ackPacket = buildAckPacket(receivedblockNum);
 
 			sendReceiveSocket.send(ackPacket);
@@ -323,7 +343,10 @@ public class Client {
 			}
 			System.out.println();
 
-			expectedBlockNum++;
+			if (resending == false) {
+				currentBlock++;
+			}
+			resending = false;
 		} while (transfering);
 		// transfer complete
 
@@ -361,25 +384,17 @@ public class Client {
 		serverAddress = ackPacket.getAddress();
 
 		// Set up data packet and stream to create files.
-		byte[] dataForPacket = new byte[516];
+		byte[] dataForPacket = new byte[4 + dataSize];
 		dataForPacket[0] = 0;
 		dataForPacket[1] = 3;
 		DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress, serverPort);
 
 		in = new BufferedInputStream(new FileInputStream(CLIENT_DIRECTORY + fname));
 
-		byte[] dataToSend = new byte[512];
+		byte[] dataToSend = new byte[dataSize];
 
 		// Data 1 is read
 		int sizeOfDataRead = in.read(dataToSend);
-
-		System.out.println("data 1: " + sizeOfDataRead);
-		for (byte b : dataToSend) {
-			System.out.print(b);
-		}
-		System.out.println();
-
-		int currentPacketNumber = 1;
 
 		while (transfering) {
 			// iterate the file in 512 byte chunks
@@ -387,14 +402,14 @@ public class Client {
 			// number i
 
 			// Add block number to packet data
-			dataForPacket[2] = (byte) ((currentPacketNumber >> 8) & 0xFF);
-			dataForPacket[3] = (byte) (currentPacketNumber & 0xFF);
+			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
+			dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
 			// Copy the data from the file into the packet data
 			System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 
 			dataPacket.setData(dataForPacket);
-			System.out.println("sending data " + currentPacketNumber + " of size: " + sizeOfDataRead);
+			System.out.println("sending data " + currentBlock + " of size: " + sizeOfDataRead);
 
 			sendReceiveSocket.send(dataPacket);
 
@@ -411,6 +426,8 @@ public class Client {
 			do {
 				try {
 					ackPacket = receiveAck();
+					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
+					System.out.println("received ack " + ackNum);
 
 					System.out.println("received: ");
 
@@ -421,20 +438,29 @@ public class Client {
 					System.out.println();
 
 				} catch (SocketTimeoutException e) {
-					System.out.println(
-							"Timeout receiving ack " + currentPacketNumber + " resending data " + currentPacketNumber);
+					System.out.println("Timeout receiving ack " + currentBlock + " resending data " + (currentBlock));
+					currentBlock--;
+					timeout++;
+					if (timeout == timeoutLim) {
+						throw new ErrorException("Timeout limit reached", 0);
+					}
+					break;
 				}
 
-			} while (validateAck(ackPacket, currentPacketNumber));
+			} while (validateAck(ackPacket));
 
-			System.out.println("received ack " + request.getData()[3]);
-			dataToSend = new byte[512];
+			
+		
+			dataToSend = new byte[dataSize];
 
-			currentPacketNumber++;
+			currentBlock++;
 			sizeOfDataRead = in.read(dataToSend);
 			if (sizeOfDataRead == -1) {
-				// Trasnfering should end
+				// Transferring should end
 				transfering = false;
+			}
+			else if (sizeOfDataRead <= 512){
+				dataSize = sizeOfDataRead;
 			}
 		}
 		in.close();
@@ -461,7 +487,7 @@ public class Client {
 	 * @param currentPacketNumber
 	 * @return
 	 */
-	protected boolean validateAck(DatagramPacket ackPacket, int currentPacketNumber) throws ErrorException {
+	protected boolean validateAck(DatagramPacket ackPacket) throws ErrorException {
 
 		int opcode = ((ackPacket.getData()[0] & 0xff) << 8) | (ackPacket.getData()[1] & 0xff);
 		int ackNumber = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
@@ -488,12 +514,12 @@ public class Client {
 		}
 
 		// check the packet number matches what server is expecting
-		if (ackNumber < currentPacketNumber) {
-			System.out.println(ackNumber + "  " + currentPacketNumber);
+		if (ackNumber < currentBlock) {
+			System.out.println(ackNumber + "  " + currentBlock);
 			System.out.println("received duplicate ack packet");
 			return true;
 			// ignore and send next data
-		} else if (ackNumber > currentPacketNumber) {
+		} else if (ackNumber > currentBlock) {
 			System.out.println("received ack from the future");
 			throw new ErrorException("received ack from the future", ILLEGAL_OPER_ERR_CODE);
 		}

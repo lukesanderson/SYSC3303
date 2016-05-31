@@ -11,7 +11,9 @@ import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 
 public class ReadRequestHandler extends RequestHandler implements Runnable {
-
+	private static int timeoutLim = 2;
+	private int timeout = 0;
+	private boolean resending = false;
 	public ReadRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
 		// TODO Auto-generated constructor stub
@@ -70,7 +72,14 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 					ackPacket = receiveAck();
 				} catch (SocketTimeoutException e) {
 					System.out.println(
-							"Timeout receiving ack " + currentPacketNumber + " resending data " + currentPacketNumber);
+							"Timeout receiving ack " + currentPacketNumber + " resending data ");
+					timeout++;
+					if(timeout == timeoutLim){
+					throw new ErrorException("Timeout limit reached", 0);
+					}
+					
+					resending = true;
+					break;
 				}
 
 				// validate ack
@@ -78,17 +87,19 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			} while (validateAck(ackPacket, currentPacketNumber));
 
 			// System.out.println("received ack " + request.getData()[3]);
-
+			if(resending == false){
 			dataToSend = new byte[512];
-
+			
 			sizeOfDataRead = in.read(dataToSend);
 			if (sizeOfDataRead == -1) {
 				// Trasnfering should end
 				transfering = false;
 			}
-
+			
 			currentPacketNumber++;
-
+			
+			}
+			resending = false;
 		}
 
 		System.out.println("Read finished");
