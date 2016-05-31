@@ -125,7 +125,13 @@ public class Client {
 				write(requestPacket);
 			}
 		} catch (ReceivedErrorException e) {
-			System.out.println("\nReceived a timeout error"); // fix this
+			System.out.println("\nReceived error: "); // fix this
+			System.out.println(e.getMessage());
+			/**
+			 * TODO DELETE FILE IF ERROR
+			 * 
+			 */
+
 		}
 
 		catch (ErrorException e) {
@@ -193,10 +199,10 @@ public class Client {
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
+		byte[] data = dataPacket.getData();
+
 		InetAddress dataAddress = dataPacket.getAddress();
 		int dataPort = dataPacket.getPort();
-
-		byte[] data = dataPacket.getData();
 
 		// Check its data
 		if (opcode == 3) {
@@ -206,11 +212,11 @@ public class Client {
 			throw new ReceivedErrorException(dataPacket);
 		} else {
 			// Not data or error
-			throw new ErrorException("Received an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
+			throw new ErrorException("\nReceived an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
 		}
 
 		// Check Address and port
-		if (dataPort != serverPort || !dataAddress.equals(serverAddress)) {
+		if ((dataPort != serverPort || !dataAddress.equals(serverAddress)) && dataNumber > 1) {
 			sendUnknownIDError(dataAddress, dataPort);
 			return true;
 		}
@@ -218,20 +224,19 @@ public class Client {
 		// check the packet number matches what server is expecting
 		if (dataNumber < currentBlock) {
 			System.out.println("received duplicate data packet");
-
+			isNewData = false;
 			currentBlock--;
-
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
-		// System.out.println(data.length);
 		if (dataPacket.getLength() < 512) {
 			transfering = false;
 		}
 
+		isNewData = true;
 		return false;
 
 	}
@@ -255,7 +260,7 @@ public class Client {
 
 		byte[] incomingData = new byte[PACKET_SIZE];
 
-		DatagramPacket dataPacket = new DatagramPacket(incomingData, incomingData.length);
+		DatagramPacket dataPacket;
 		DatagramPacket ackPacket = buildAckPacket(0);
 
 		File newFile = new File(CLIENT_DIRECTORY + fname);
@@ -270,6 +275,8 @@ public class Client {
 
 		dataPacket = receiveData();
 
+		validateData(dataPacket);
+
 		System.out.println("got packet: ");
 		for (byte b : dataPacket.getData()) {
 			System.out.print(b);
@@ -282,7 +289,7 @@ public class Client {
 
 		// write data
 		if (resending == false) {
-			writer.write(incomingData, 4, DATA_SIZE);
+			writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 		}
 
 		// build and send ack
@@ -344,7 +351,7 @@ public class Client {
 		// transfer complete
 
 		System.out.println("read finished");
-		//newFile.deleteOnExit();
+		// newFile.deleteOnExit();
 		writer.close();
 
 	}
@@ -414,8 +421,6 @@ public class Client {
 				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 			}
 
-			
-			
 			// dataPacket.setData(dataForPacket);
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
@@ -467,6 +472,8 @@ public class Client {
 			}
 
 		}
+
+		System.out.println("File transfer has finished");
 		in.close();
 	}
 
@@ -477,7 +484,7 @@ public class Client {
 	 * @throws IOException
 	 */
 	private DatagramPacket receiveAck() throws IOException {
-		byte[] data = new byte[4];
+		byte[] data = new byte[PACKET_SIZE];
 		DatagramPacket receivePacket = new DatagramPacket(data, data.length);
 
 		sendReceiveSocket.receive(receivePacket);

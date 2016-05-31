@@ -1,6 +1,7 @@
 package server;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -29,10 +30,18 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 	private void readRequest() throws IOException, ErrorException {
 
 		String filename = getFileName(request.getData());
+
+		File readFile = new File(SERVER_DIRECTORY + filename);
+
+		if (!readFile.exists()) {
+			System.out.println("Unable to find file " + filename);
+			throw new ErrorException(filename + " not found", FILE_NOT_FOUND_CODE);
+		}
+
 		// printVerbose(request, false);
 
 		byte[] dataForPacket;
-	
+
 		DatagramPacket ackPacket = null;
 
 		in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
@@ -45,14 +54,13 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		while (transfering) {
 
 			dataSize = in.available();
-			
+
 			if (dataSize >= DATA_SIZE) {
 				dataToSend = new byte[DATA_SIZE];
 			} else if (dataSize > 0) {
 				dataToSend = new byte[dataSize];
 			}
 
-			
 			sizeOfDataRead = in.read(dataToSend);
 
 			dataForPacket = new byte[4 + dataToSend.length];
@@ -62,13 +70,11 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
 			dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
-			
 			// Copy the data from the file into the packet data
 			if (dataForPacket.length > 4) {
 				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 			}
-			
-			
+
 			// Set packet data
 
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
@@ -77,7 +83,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			// Send data Packet
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress,
 					clientPort);
-			
+
 			inOutSocket.send(dataPacket);
 
 			System.out.println("sent: ");
@@ -125,7 +131,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		}
 		in.close();
 		System.out.println("Read finished");
-		
+
 	}
 
 	/**

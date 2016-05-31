@@ -23,16 +23,18 @@ public class RequestHandler {
 	protected static final String SERVER_DIRECTORY = "C:\\Users\\Public\\Server\\";
 	protected static final int PACKET_SIZE = 516;
 	protected static final int DATA_SIZE = 512;
+
+	//Error codes
+	protected static final int FILE_NOT_FOUND_CODE = 1;
+	protected static final int FILE_EXISTS_CODE = 3;
 	protected static final int ILLEGAL_OPER_ERR_CODE = 4;
 	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
-	
+
 	protected static int timeoutLim = 2;
 	protected int timeout = 0;
 	protected int currentBlock = 1;
 	protected boolean resending = false;
-	
-	
-	
+
 	public RequestHandler(DatagramPacket request, Server parent) {
 		this.request = request;
 		parentServer = parent;

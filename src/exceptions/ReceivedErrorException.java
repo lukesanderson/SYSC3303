@@ -9,7 +9,6 @@ public class ReceivedErrorException extends ErrorException {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private String message;
 
 	public ReceivedErrorException(String message, int errCode) {
 		super(message, errCode);
@@ -18,17 +17,32 @@ public class ReceivedErrorException extends ErrorException {
 	public ReceivedErrorException(DatagramPacket errPacket) {
 		super(null, -1);
 
-		byte[] data = errPacket.getData();
+		byte[] messageBytes = new byte[errPacket.getLength()];
 
-		//for (byte b : data) {
-			//System.out.print(b);
-		//}
+		
+		
+		
+		System.arraycopy(errPacket.getData(), 4, messageBytes, 0, errPacket.getLength());
+		
+		
+		// System.out.println("error message in bytes: ");
+		// for(byte b : messageBytes){
+		// System.out.print(b);
+		// }
+		// System.out.println();
+		//
+		// System.out.println("error message in char: ");
+		// for(byte b : messageBytes){
+		// System.out.print((char)b);
+		// }
+		// System.out.println();
 
-		this.message = new String(data);
+
+		this.message = new String(messageBytes);
 	}
 
-	//public String getMessage() {
-		//return this.message;
-	//}
+	// public String getMessage() {
+	// return this.message;
+	// }
 
 }

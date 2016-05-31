@@ -21,7 +21,20 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 	private void writeRequest() throws IOException, ErrorException {
 
 		String filename = getFileName(request.getData());
-		byte[] incomingData = new byte[PACKET_SIZE];
+
+		File newFile = new File(SERVER_DIRECTORY + filename);
+
+		/**
+		 * 
+		 * UNCOMMENT FOR FILE CHECKING
+		 * 
+		 * 
+		 * // Check if file is already here if (newFile.exists()) {
+		 * System.out.println("Client tried to write to " + filename +
+		 * " which already exists"); throw new ErrorException(filename +
+		 * " already found on system", FILE_EXISTS_CODE); }
+		 * 
+		 */
 
 		DatagramPacket dataPacket = null;
 		// new DatagramPacket(incomingData, incomingData.length);
@@ -38,16 +51,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		System.out.println();
 
-		File newFile = new File(SERVER_DIRECTORY + filename);
-
-		if (!newFile.exists()) {
-			/**
-			 * 
-			 * SEND ERROR THAT FILE ALREADY EXISTS
-			 * 
-			 */
-			newFile.createNewFile();
-		}
+		newFile.createNewFile();
 
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 		do {
@@ -102,7 +106,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		// transfer complete
 
 		System.out.println("Finished");
-		newFile.deleteOnExit();
 		writer.close();
 
 	}
@@ -144,8 +147,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
-
-		byte[] data = dataPacket.getData();
 
 		InetAddress dataAddress = dataPacket.getAddress();
 		int dataPort = dataPacket.getPort();
@@ -193,11 +194,12 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			writeRequest();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			System.out.println("Caught IOException");
 			e.printStackTrace();
 		} catch (ReceivedErrorException e) {
 			System.out.println("\nReceived error packet.");
 			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
-			q.delete();
+			// q.delete();
 		} catch (ErrorException e) {
 
 			// Build the error
@@ -215,7 +217,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				e1.printStackTrace();
 			}
 			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
-			q.delete();
+			// q.delete();
 		}
 
 		inOutSocket.close();
