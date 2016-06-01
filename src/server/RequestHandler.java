@@ -37,7 +37,7 @@ public class RequestHandler {
 	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
 	protected static final int FILE_EXISTS_CODE = 6;
 
-	protected static int timeoutLim = 2;
+	protected static int timeoutLim = 3;
 	protected int timeout = 0;
 	protected int currentBlock = 1;
 	protected boolean resending = false;

@@ -67,7 +67,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 					// Receive data packet
 					dataPacket = receiveData();
 					System.out.println("received: ");
-
+					
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
 					}
@@ -97,20 +97,23 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 			// write block
 			if (resending == false) {
+				timeout = 0;
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
 
 			// Build ack
+			
 			ackPacket = buildAckPacket(receivedNumber);
-
+			
 			System.out.println("sent: ");
 			for (byte b : ackPacket.getData()) {
 				System.out.print(b);
 			}
 
 			System.out.println();
-
+			if(timeout < 1){
 			inOutSocket.send(ackPacket);
+			}
 			if (resending == false) {
 				currentBlock++;
 			}

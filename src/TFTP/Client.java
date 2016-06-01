@@ -50,7 +50,7 @@ public class Client {
 	
 	private static final int DATA_SIZE = 512;
 	private static final int PACKET_SIZE = 516;
-	private static int timeoutLim = 2;
+	private static int timeoutLim = 3;
 	private int timeout = 0;
 	private boolean resending = false;
 	private int currentBlock = 1;
@@ -471,7 +471,7 @@ public class Client {
 		serverAddress = ackPacket.getAddress();
 
 		// Set up data packet and stream to create files.
-		byte[] dataForPacket;
+		byte[] dataForPacket = null;
 
 		// DatagramPacket dataPacket = new DatagramPacket(dataForPacket,
 		// dataForPacket.length, serverAddress, serverPort);
@@ -481,12 +481,14 @@ public class Client {
 		byte[] dataToSend = new byte[dataSize];
 
 		// Data 1 is read
-		int sizeOfDataRead;
+		int sizeOfDataRead = 0;
 
 		while (transfering) {
 			// iterate the file in 512 byte chunks
 			// Each iteration send the packet and receive the ack to match block
 			// number i
+			
+			if(resending == false){
 			dataSize = in.available();
 			if (dataSize >= DATA_SIZE) {
 				dataToSend = new byte[DATA_SIZE];
@@ -507,13 +509,13 @@ public class Client {
 			if (dataForPacket.length > 4) {
 				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 			}
-
+			}
 			// dataPacket.setData(dataForPacket);
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
 					serverPort);
 			sendReceiveSocket.send(dataPacket);
-
+			resending = false;
 			System.out.println("sent: ");
 
 			for (byte b : dataPacket.getData()) {
@@ -521,7 +523,8 @@ public class Client {
 			}
 
 			System.out.println();
-
+			
+			
 			// Receive ack packet
 
 			do {
@@ -540,7 +543,8 @@ public class Client {
 
 				} catch (SocketTimeoutException e) {
 					System.out.println("Timeout receiving ack " + currentBlock + " resending data " + (currentBlock));
-					currentBlock--;
+					
+					
 					timeout++;
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
@@ -548,10 +552,13 @@ public class Client {
 					resending = true;
 					break;
 				}
+				
 
 			} while (validateAck(ackPacket));
-
+			
+			if(resending == false){
 			currentBlock++;
+			}
 
 			if (sizeOfDataRead < 512) {
 				// Transferring should end
