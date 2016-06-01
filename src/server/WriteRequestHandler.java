@@ -27,25 +27,12 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		File newFile = new File(SERVER_DIRECTORY + filename);
 		File directory = new File(SERVER_DIRECTORY);
 		long freeSpace = directory.getFreeSpace();
-		//System.out.println(freeSpace);
-	/*	if( freeSpace < 0){
-			System.out.println("Space is full on the disk");
-			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
-			
+
+		// Check if file is already here
+		if (newFile.exists()) {
+			System.out.println("Client tried to write to " + filename + " which already exists");
+			throw new ErrorException(filename + " already found on system", FILE_EXISTS_CODE);
 		}
-*/
-		
-		/**
-		 * 
-		 * UNCOMMENT FOR FILE CHECKING
-		 * 
-		 * 
-		 * // Check if file is already here if (newFile.exists()) {
-		 * System.out.println("Client tried to write to " + filename +
-		 * " which already exists"); throw new ErrorException(filename +
-		 * " already found on system", FILE_EXISTS_CODE); }
-		 * 
-		 */
 
 		DatagramPacket dataPacket = null;
 		// new DatagramPacket(incomingData, incomingData.length);
@@ -99,23 +86,15 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			} while (validateData(dataPacket));
 
 			int receivedNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
-			
-			
-			if( freeSpace < dataPacket.getLength()-4){
+
+			if (freeSpace < dataPacket.getLength() - 4) {
 				System.out.println("Not enough space on disk for file");
 				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
-				
+
 			}
 
-			freeSpace-= dataPacket.getLength() -4;
-			
-//			freeSpace = directory.getFreeSpace();
-//			if( freeSpace < dataPacket.getLength()){
-//				System.out.println("Not enough space on disk for file");
-//				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
-//				
-//			}
-			
+			freeSpace -= dataPacket.getLength() - 4;
+
 			// write block
 			if (resending == false) {
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
@@ -196,7 +175,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			// Not data or error
 			throw new ErrorException("\nReceived an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
 		}
-		
 
 		// Check Address and port
 		if (dataPort != clientPort || !dataAddress.equals(clientAddress)) {
@@ -236,6 +214,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			System.out.println("\nReceived error packet.");
 			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
 			// q.delete();
+			System.out.println(e.getMessage());
 		} catch (ErrorException e) {
 
 			// Build the error

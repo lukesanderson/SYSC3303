@@ -141,7 +141,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private DatagramPacket receiveAck() throws IOException {
-		byte[] data = new byte[4];
+		byte[] data = new byte[PACKET_SIZE];
 		DatagramPacket receivePacket = new DatagramPacket(data, data.length);
 
 		inOutSocket.receive(receivePacket);
@@ -200,8 +200,8 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		try {
 			readRequest();
 		} catch (ReceivedErrorException e) {
-			System.out.println("Received error packet. message: \n");
-			System.out.println(e.getErrorCode());
+			System.out.println("Received error packet. message: ");
+			System.out.println(e.getMessage());
 		} catch (ErrorException e) {
 
 			// Build the error

@@ -22,6 +22,8 @@ public class RequestHandler {
 	protected boolean waitingForAck = true;
 
 	public static final String SERVER_DIRECTORY = System.getProperty("user.dir") + File.separator + "src" + File.separator + "server" + File.separator;
+	
+
 	//to check for error 2 
 	//protected static final String SERVER_DIRECTORY = "F:\\JunkDataToFill\\";
 	protected static final int PACKET_SIZE = 516;

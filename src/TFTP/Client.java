@@ -47,6 +47,7 @@ public class Client {
 	private static String fname;
 	private static final String CLIENT_DIRECTORY = System.getProperty("user.dir") + File.separator + "src"
 			+ File.separator + "TFTP" + File.separator;
+	
 	private static final int DATA_SIZE = 512;
 	private static final int PACKET_SIZE = 516;
 	private static int timeoutLim = 2;
@@ -408,9 +409,7 @@ public class Client {
 
 			
 			if( freeSpace < dataPacket.getLength()-4){
-				System.out.println("Not enough space on disk for file");
 				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
-				
 			}
 
 			freeSpace-= dataPacket.getLength() -4;
