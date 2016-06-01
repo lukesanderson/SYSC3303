@@ -28,12 +28,12 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		File directory = new File(SERVER_DIRECTORY);
 		long freeSpace = directory.getFreeSpace();
 		//System.out.println(freeSpace);
-		if( freeSpace <512){
+	/*	if( freeSpace < 0){
 			System.out.println("Space is full on the disk");
 			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
 			
 		}
-
+*/
 		
 		/**
 		 * 

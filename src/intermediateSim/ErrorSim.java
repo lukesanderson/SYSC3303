@@ -157,7 +157,6 @@ public class ErrorSim implements Runnable {
 				System.out.println("Opcode has been altered.");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
-				sendPacket(receivePacket);
 				System.out.println("Sent from an invalid ID.");
 			} else { //send normally
 				sendPacket(receivePacket);

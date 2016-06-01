@@ -54,8 +54,18 @@ public class Client {
 	private boolean resending = false;
 	private int currentBlock = 1;
 
+	
+	
+	
+	
+
+	// Error codes
+	private static final int FILE_NOT_FOUND_CODE = 1;
+	private static final int ACCESS_DENIED_CODE = 2;
+	private static final int DISK_FULL_ERROR_CODE = 3;
 	private static final int ILLEGAL_OPER_ERR_CODE = 4;
 	private static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
+	private static final int FILE_EXISTS_CODE = 6;
 
 	private static final int SERVER_LISTENER = 69;
 	private static final int INTERMEDIARY_LISTENER = 23;
@@ -318,6 +328,16 @@ public class Client {
 		DatagramPacket ackPacket = buildAckPacket(0);
 
 		File newFile = new File(CLIENT_DIRECTORY + fname);
+		
+		File directory = new File(CLIENT_DIRECTORY);
+		long freeSpace = directory.getFreeSpace();
+		
+	/*	if( freeSpace <512){
+			System.out.println("Space is full on the disk");
+			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
+			
+		}*/
+		
 
 		if (!newFile.exists()) {
 			newFile.createNewFile();
@@ -386,6 +406,19 @@ public class Client {
 
 			int receivedblockNum = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
+			
+			if( freeSpace < dataPacket.getLength()-4){
+				System.out.println("Not enough space on disk for file");
+				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
+				
+			}
+
+			freeSpace-= dataPacket.getLength() -4;
+			
+			
+			
+			
+			
 			if (resending == false) {
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
