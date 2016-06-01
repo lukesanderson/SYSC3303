@@ -11,7 +11,7 @@ public class Server {
 
 	private int threadCount;
 
-	private boolean verboseMode = false;
+	private static boolean verboseMode = false;
 
 	public Server() {
 		threadCount = 0;
@@ -33,7 +33,7 @@ public class Server {
 		System.out.println("Server: " + threadCount);
 	}
 
-	public boolean isVerbose() {
+	public static boolean isVerbose() {
 		return verboseMode;
 	}
 

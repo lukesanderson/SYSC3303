@@ -1,5 +1,6 @@
 package server;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -20,12 +21,24 @@ public class RequestHandler {
 	protected boolean transfering = true;
 	protected boolean waitingForAck = true;
 
-	protected static final String SERVER_DIRECTORY = "C:\\Users\\Public\\Server\\";
+	public static final String SERVER_DIRECTORY = System.getProperty("user.dir") + File.separator + "src" + File.separator + "server" + File.separator;
+	//to check for error 2 
+	//protected static final String SERVER_DIRECTORY = "F:\\JunkDataToFill\\";
 	protected static final int PACKET_SIZE = 516;
 	protected static final int DATA_SIZE = 512;
+
+	// Error codes
+	protected static final int FILE_NOT_FOUND_CODE = 1;
+	protected static final int ACCESS_DENIED_CODE = 2;
+	protected static final int DISK_FULL_ERROR_CODE = 3;
 	protected static final int ILLEGAL_OPER_ERR_CODE = 4;
 	protected static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
-	
+	protected static final int FILE_EXISTS_CODE = 6;
+
+	protected static int timeoutLim = 2;
+	protected int timeout = 0;
+	protected int currentBlock = 1;
+	protected boolean resending = false;
 
 	public RequestHandler(DatagramPacket request, Server parent) {
 		this.request = request;
