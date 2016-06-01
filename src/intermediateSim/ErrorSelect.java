@@ -26,7 +26,7 @@ public class ErrorSelect {
 		System.out.print("\nError Simulator \n");
 		//System.out.println("Would you like to run the ErrorSim in (v)erbose or (q)uiet mode?");
 		//String verbose = READER.nextLine();
-
+  
 		while (vq == -1) {
 			System.out.println("Would you like to run the ErrorSim in (v)erbose or (q)uiet mode?");
 			String verbose = READER.nextLine();
