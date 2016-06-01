@@ -96,7 +96,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			freeSpace -= dataPacket.getLength() - 4;
 
 			// write block
-			if (resending == false) {
+			if (resending == false && isNewData) {
 				timeout = 0;
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
@@ -190,6 +190,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			System.out.println("received duplicate data packet");
 			isNewData = false;
 			currentBlock--;
+			return false;
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");

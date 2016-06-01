@@ -40,7 +40,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 		// printVerbose(request, false);
 
-		byte[] dataForPacket;
+		byte[] dataForPacket = null;
 
 		DatagramPacket ackPacket = null;
 
@@ -49,10 +49,11 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		byte[] dataToSend = new byte[dataSize];
 
 		// Data 1 is read
-		int sizeOfDataRead;
+		int sizeOfDataRead = 0;
 
 		while (transfering) {
 
+			if(resending == false){
 			dataSize = in.available();
 
 			if (dataSize >= DATA_SIZE) {
@@ -74,7 +75,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			if (dataForPacket.length > 4) {
 				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 			}
-
+			}
 			// Set packet data
 
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
@@ -85,7 +86,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 					clientPort);
 
 			inOutSocket.send(dataPacket);
-
+			resending = false;
 			System.out.println("sent: ");
 
 			for (byte b : dataPacket.getData()) {

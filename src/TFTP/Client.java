@@ -54,6 +54,7 @@ public class Client {
 	private int timeout = 0;
 	private boolean resending = false;
 	private int currentBlock = 1;
+	private boolean duplicateAck = false;
 
 	
 	
@@ -511,6 +512,7 @@ public class Client {
 			}
 			}
 			// dataPacket.setData(dataForPacket);
+			//if(duplicateAck == false){
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
 					serverPort);
@@ -523,6 +525,9 @@ public class Client {
 			}
 
 			System.out.println();
+			//}else{
+			//	duplicateAck = false;
+			//}
 			
 			
 			// Receive ack packet
@@ -622,6 +627,7 @@ public class Client {
 		if (ackNumber < currentBlock) {
 			System.out.println(ackNumber + "  " + currentBlock);
 			System.out.println("received duplicate ack packet");
+			//duplicateAck = true;
 			return true;
 			// ignore and send next data
 		} else if (ackNumber > currentBlock) {
