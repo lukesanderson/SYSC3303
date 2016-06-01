@@ -25,20 +25,15 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		String filename = getFileName(request.getData());
 
 		File newFile = new File(SERVER_DIRECTORY + filename);
-		 
-		long freeSpace = newFile.getFreeSpace();
-
+		File directory = new File(SERVER_DIRECTORY);
+		long freeSpace = directory.getFreeSpace();
+		//System.out.println(freeSpace);
 		if( freeSpace <512){
 			System.out.println("Space is full on the disk");
 			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
 			
 		}
-		
-		
-		
-		
-		
-		
+
 		
 		/**
 		 * 
@@ -104,13 +99,22 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			} while (validateData(dataPacket));
 
 			int receivedNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
-
-			freeSpace = newFile.getFreeSpace();
-			if( freeSpace < dataPacket.getLength()){
+			
+			
+			if( freeSpace < dataPacket.getLength()-4){
 				System.out.println("Not enough space on disk for file");
 				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
 				
 			}
+
+			freeSpace-= dataPacket.getLength() -4;
+			
+//			freeSpace = directory.getFreeSpace();
+//			if( freeSpace < dataPacket.getLength()){
+//				System.out.println("Not enough space on disk for file");
+//				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
+//				
+//			}
 			
 			// write block
 			if (resending == false) {

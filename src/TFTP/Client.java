@@ -45,7 +45,8 @@ public class Client {
 	}; // same for decision both enum are input in the console of the client
 
 	private static String fname;
-	private static final String CLIENT_DIRECTORY = System.getProperty("user.dir") + File.separator + "src" + File.separator + "TFTP" + File.separator;
+	private static final String CLIENT_DIRECTORY = System.getProperty("user.dir") + File.separator + "src"
+			+ File.separator + "TFTP" + File.separator;
 	private static final int DATA_SIZE = 512;
 	private static final int PACKET_SIZE = 516;
 	private static int timeoutLim = 2;
@@ -57,13 +58,16 @@ public class Client {
 	private static final int UNKNOWN_TRANSFER_ID_ERR_CODE = 5;
 
 	private static final int SERVER_LISTENER = 69;
-	private static final int INTERMEDIARY_LISTENER = 69;
+	private static final int INTERMEDIARY_LISTENER = 23;
 	private int dataSize = 512;
 	private boolean transfering = true;
 	private boolean isNewData = true;
 	private InetAddress serverAddress;
 	private int serverPort;
 	private boolean invalidFile = true;
+	private boolean readOrWrite = false;
+	private boolean testingMode = false;
+	private int portSelected;
 
 	public Client() {
 		try {
@@ -78,7 +82,7 @@ public class Client {
 
 	public static void main(String args[]) throws IOException {
 		Client c = new Client();
-		System.out.println("open Client Program!\n");
+		System.out.println("TFTP Client is running.\n");
 		c.inter();
 	}
 
@@ -87,24 +91,47 @@ public class Client {
 		Decision request = Decision.RRQ; // default decision which is Read
 		input = new Scanner(System.in); // run a new scanner to scan the input
 										// from the user
-
-		System.out.println("choose (R)ead Request, (W)rite Request, or (Q)uit?");
-		String choice = input.nextLine(); // reads the input String
-
+		
+		System.out.println("Would you like to proceed in (N)ormal or (T)est mode?");
+		String testMode = input.nextLine();
+		while(testingMode == false){
+			if(testMode.equalsIgnoreCase("T")){
+				System.out.println("Testing Mode Selected.");
+				portSelected = INTERMEDIARY_LISTENER;
+				testingMode = true;
+			}else if (testMode.equalsIgnoreCase("N")){
+				System.out.println("Normal Mode Selected.");
+				portSelected = SERVER_LISTENER;
+				testingMode = true;
+			}
+			else{
+				System.out.println("Invalid mode, please provide valid input.");
+				testingMode = false;
+			}
+		}
+		
 		// it runs threw all the possible answers if none are applicable it
 		// recursively go back to inter()
+		while(readOrWrite == false){
+			System.out.println("choose (R)ead Request, (W)rite Request, or (Q)uit?");
+			String choice = input.nextLine(); // reads the input String
 		if (choice.equalsIgnoreCase("R")) {
 			request = Decision.RRQ;
 			System.out.println("Client: send a read request.");
+			readOrWrite = true;
 		} else if (choice.equalsIgnoreCase("W")) {
 			request = Decision.WRQ;
 			System.out.println("Client:  send a write request.");
+			readOrWrite = true;
 		} else if (choice.equalsIgnoreCase("Q")) {
 			System.out.println("Goodbye!");
+			readOrWrite = true;
 			System.exit(1);
 		} else {
+			readOrWrite = false;
 			System.out.println("invalid choice.  Please try again...");
-			inter();
+	
+		}
 		}
 
 		// gets a file directory from the user
@@ -207,7 +234,7 @@ public class Client {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		requestPacket.setPort(INTERMEDIARY_LISTENER);
+		requestPacket.setPort(portSelected);
 
 		return requestPacket;
 	}

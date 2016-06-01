@@ -132,7 +132,6 @@ public class ErrorSim implements Runnable {
 				System.out.println("Opcode has been altered");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
-				sendPacket(receivePacket);
 				System.out.println("Sent from an invalid ID"); //Send from a different socket
 			}else { //send normally
 				sendPacket(receivePacket);
@@ -222,6 +221,7 @@ public class ErrorSim implements Runnable {
 		} catch (IOException e) {
 			System.out.println("IO exception while attempting to send error packet");
 		}
+		
 		errorSocket.close();
 	}
 	
