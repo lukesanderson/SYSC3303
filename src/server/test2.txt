@@ -1,0 +1,208 @@
+
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good
+
+Test cases:
+data-lost-write (d-01): good 
+data-lost-read (d-01): good
+
+ack-lost-read (a-01): good
+ack-lost-write (a-01): good
+
+
+data-delay-write(d-02): good
+data-delay-read(d-02): good
+
+ack-delay-write(a-02):
+ack-delay-read(a-02): good
+
+
+
+
+
+read-dataFull: good
+write-dataFull: 
+
+read-fileNotOnServer: good

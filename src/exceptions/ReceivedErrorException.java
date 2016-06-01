@@ -22,7 +22,7 @@ public class ReceivedErrorException extends ErrorException {
 		
 		
 		
-		System.arraycopy(errPacket.getData(), 4, messageBytes, 0, errPacket.getLength());
+		System.arraycopy(errPacket.getData(), 4, messageBytes, 0, errPacket.getLength()-4);
 		
 		
 		// System.out.println("error message in bytes: ");

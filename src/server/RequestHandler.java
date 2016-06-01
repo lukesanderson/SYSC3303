@@ -49,7 +49,7 @@ public class RequestHandler {
 
 		try {
 			inOutSocket = new DatagramSocket();
-			inOutSocket.setSoTimeout(2000);
+			inOutSocket.setSoTimeout(1000);
 		} catch (SocketException e) {
 			System.out.println("Request Handler: " + "Unable to create a socket to handle request");
 			e.printStackTrace();
