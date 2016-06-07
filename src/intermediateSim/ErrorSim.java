@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Scanner;
+import java.net.InetAddress;
+
 
 /**
  * TFTP Error Simulator that can affects the selected ACK or DATA packet, then
@@ -36,6 +39,10 @@ public class ErrorSim implements Runnable {
 	private int mode;
 	private int corruption;
 	private boolean newError = true;
+	private String server_adress = "134.117.59.45";
+	
+	 
+	
 	/**
 	 * Constructor for the ErrorSim that is passed the initial packet and client port,
 	 * as well as the user input need to select which error to create.	
@@ -237,10 +244,32 @@ public class ErrorSim implements Runnable {
 	public void run() {
 
 		// Create the datagram packet for the request
-	   DatagramPacket initialRequest = new DatagramPacket(initPacket.getData(), initPacket.getLength(),
-			initPacket.getAddress(), INITIAL_SERVER_PORT);
-		sendPacket(initialRequest);
+	   DatagramPacket initialRequest = new DatagramPacket(initPacket.getData(), initPacket.getLength());
 
+	   try{
+		initialRequest.setAddress(InetAddress.getByName(server_adress));
+	
+	   }  catch (UnknownHostException e){
+		   
+		   
+		   
+		   e.printStackTrace();
+	   }
+		
+		
+		
+	   initialRequest.setPort(INITIAL_SERVER_PORT);
+
+
+	  
+	   
+	   
+	   
+		sendPacket(initialRequest);
+		
+		
+//134.117.59.45
+		
 		// Loop until the send and receive method is finished
 		boolean cont = true;
 		while (cont) {

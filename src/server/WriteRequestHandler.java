@@ -198,6 +198,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		}
 
 		if (dataPacket.getLength() < 512) {
+			System.out.println("ending.");
 			transfering = false;
 		}
 
