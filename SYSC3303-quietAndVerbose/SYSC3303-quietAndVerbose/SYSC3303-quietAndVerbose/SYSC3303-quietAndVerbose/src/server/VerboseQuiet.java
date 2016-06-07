@@ -3,22 +3,21 @@ package server;
 import java.net.DatagramPacket;
 
 public class VerboseQuiet {
-
+	private boolean verbose = true;
 	private static final int BLOCK_OFFSET= 32767;
 	
-	
-	
 	public VerboseQuiet(boolean verbose) {
-		
+		this.verbose = verbose;
+	
 	}
 	
 	public void printThis(boolean important, String input){
 	
-	if(important == true){
+	if(important){
 		System.out.print(input);
 	}
-	else if(important){
-		System.out.print("");
+	else if(!important){
+		
 	}
 	}
 	
@@ -31,11 +30,8 @@ public class VerboseQuiet {
 	 */
 	public void printThis2(boolean important, DatagramPacket p ){
 		
-		int i = 1;
-		
 		if(important){
 			
-			if(i == 1){
 			//print opcode
 			int opcodeInt = ((p.getData()[0] & 0xff) << 8) | (p.getData()[1] & 0xff);
 			System.out.println("opcode: " + opcodeInt);
@@ -49,9 +45,6 @@ public class VerboseQuiet {
 			if(receivedNumber > BLOCK_OFFSET){
 				receivedNumber += BLOCK_OFFSET;
 			}
-			}
-			
-			
 			
 			if(p.getLength() == 4){
 				
@@ -63,7 +56,6 @@ public class VerboseQuiet {
 				System.out.println("\n");
 				
 			}else{
-				
 				System.out.print("Bytes: ");
 				for (byte b : p.getData()) {
 					System.out.print(b);
@@ -71,10 +63,12 @@ public class VerboseQuiet {
 				System.out.println("\n");
 			}
 			
+			
 		}
 		
 	}	
 }
+
 		
 		
 		

@@ -363,13 +363,6 @@ public class Client {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					/*System.out.println("received: ");
-					for (byte b : dataPacket.getData()) {
-						System.out.print(b);
-						
-						
-					}
-					System.out.println();*/
 					
 					vq.printThis(verboseMode, "received: \n");
 					//vq.printThis(false, "\npacket: ");
@@ -397,14 +390,8 @@ public class Client {
 			}
 			// Build the Ack
 			ackPacket = buildAckPacket(receivedblockNum);
-
-			/*System.out.println("sending packet: ");
-			for (byte b : ackPacket.getData()) {
-				System.out.print(b);
-			}
-			System.out.println();*/
 			
-			vq.printThis(false, "sending packet: \n");
+			vq.printThis(verboseMode, "sending packet: \n");
 			//vq.printThis(false, "\npacket: ");
 			vq.printThis2(verboseMode, ackPacket);
 			
@@ -440,13 +427,8 @@ public class Client {
 
 		// check ack 0
 		
-	/*	System.out.println("received: ");
-		for (byte b : ackPacket.getData()) {
-			System.out.print(b);
-		}
-		System.out.println();*/
 		
-		vq.printThis(false, "received: \n");
+		vq.printThis(verboseMode, "received: \n");
 		//vq.printThis(false, "\npacket: ");
 		vq.printThis2(verboseMode, ackPacket);
 
@@ -493,20 +475,12 @@ public class Client {
 			}
 
 			// dataPacket.setData(dataForPacket);
-			vq.printThis(verboseMode,"sending data " + currentBlock + " of size: " + dataForPacket.length);
+			vq.printThis(verboseMode,"sending data " + currentBlock + " of size: " + dataForPacket.length + "\n");
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
 					serverPort);
 			sendReceiveSocket.send(dataPacket);
-
-			/*System.out.println("sent: ");
-
-			for (byte b : dataPacket.getData()) {
-				System.out.print(b);
-			}
-
-			System.out.println();*/
 			
-			vq.printThis(false, "sent:\n");
+			vq.printThis(verboseMode, "sent:\n");
 			//vq.printThis(false, "\npacket: ");
 			vq.printThis2(verboseMode, dataPacket);
 
@@ -516,18 +490,9 @@ public class Client {
 				try {
 					ackPacket = receiveAck();
 					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
-				/*	System.out.println("received ack " + ackNum);
-
-					System.out.println("received: ");
-
-					for (byte b : ackPacket.getData()) {
-						System.out.print(b);
-					}
-
-					System.out.println();*/
 					
-					vq.printThis(false, "received ack "+ ackNum + "\n");
-					vq.printThis(false, "received: \n");
+					vq.printThis(verboseMode, "received ack "+ ackNum + "\n");
+					vq.printThis(verboseMode, "received: \n");
 					//vq.printThis(false, "\npacket: ");
 					vq.printThis2(verboseMode, ackPacket);
 

@@ -16,6 +16,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 	private int dataSize = 512;
 	private BufferedInputStream in;
+	VerboseQuiet vQ = new VerboseQuiet(Server.isVerbose());
 
 	public ReadRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
@@ -33,7 +34,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		String filename = getFileName(request.getData());
 
 		File readFile = new File(SERVER_DIRECTORY + filename);
-		VerboseQuiet vQ = new VerboseQuiet(Server.isVerbose());
+		
 		
 
 		if (!readFile.exists()) {
@@ -80,7 +81,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 			// Set packet data
 
-			vQ.printThis(false,"sending data " + currentBlock + " of size: " + dataForPacket.length + "\n");
+			vQ.printThis(Server.isVerbose(),"sending data " + currentBlock + " of size: " + dataForPacket.length + "\n");
 			// PRINT DATA HERE
 
 			// Send data Packet
@@ -91,7 +92,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 			
 			
-			vQ.printThis(false, "sent:\n");
+			vQ.printThis(Server.isVerbose(), "sent:\n");
 			//vQ.printThis(false, "\npacket: ");
 			vQ.printThis2(Server.isVerbose(), dataPacket);
 
@@ -102,17 +103,8 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 					ackPacket = receiveAck();
 					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
 					
-					
-				//	System.out.println("received ack " + ackNum);
-
-				//	System.out.println("received: ");
-
-					//for (byte b : ackPacket.getData()) {
-					//	System.out.print(b);
-					//}
-					//verbose mode
-					vQ.printThis(false, "received ack " + ackNum + "\n");
-					vQ.printThis(false, "received:\n");
+					vQ.printThis(Server.isVerbose(), "received ack " + ackNum + "\n");
+					vQ.printThis(Server.isVerbose(), "received:\n");
 					//vQ.printThis(false, "\npacket: ");
 					vQ.printThis2(Server.isVerbose(), ackPacket);
 					//System.out.println();

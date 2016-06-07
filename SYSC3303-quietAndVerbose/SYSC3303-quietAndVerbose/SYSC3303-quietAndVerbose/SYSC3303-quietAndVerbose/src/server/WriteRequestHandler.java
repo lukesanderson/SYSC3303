@@ -66,7 +66,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		
 
-		vQ.printThis(Server.isVerbose(), "sent: \n");
+		vQ.printThis(false, "sent: \n");
 		vQ.printThis2(Server.isVerbose(), ackPacket);
 		
 		
@@ -90,7 +90,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 					// Receive data packet
 					dataPacket = receiveData();
 					
-					vQ.printThis(Server.isVerbose(), "received: \n");
+					vQ.printThis(false, "received: \n");
 					//prints output only id
 					vQ.printThis2(Server.isVerbose(), dataPacket);
 
@@ -127,7 +127,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			// Build ack
 			ackPacket = buildAckPacket(receivedNumber);
 
-			vQ.printThis(Server.isVerbose(), "sent: \n");
+			vQ.printThis(false, "sent: \n");
 			//vQ.printThis(false, "packet: \n");
 			vQ.printThis2(Server.isVerbose(), ackPacket);
 			

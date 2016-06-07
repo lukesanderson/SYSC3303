@@ -272,12 +272,12 @@ public class Client {
 
 		// check the packet number matches what server is expecting
 		if (dataNumber < currentBlock) {
-			vq.printThis(verboseMode,"received duplicate data packet");
+			System.out.println("received duplicate data packet");
 			isNewData = false;
 			currentBlock--;
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
-			vq.printThis(verboseMode,"received data from the future");
+			System.out.println("received data from the future");
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
@@ -363,7 +363,14 @@ public class Client {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-
+					/*System.out.println("received: ");
+					for (byte b : dataPacket.getData()) {
+						System.out.print(b);
+						
+						
+					}
+					System.out.println();*/
+					
 					vq.printThis(verboseMode, "received: \n");
 					//vq.printThis(false, "\npacket: ");
 					vq.printThis2(verboseMode, dataPacket);
@@ -391,7 +398,13 @@ public class Client {
 			// Build the Ack
 			ackPacket = buildAckPacket(receivedblockNum);
 
-			vq.printThis(verboseMode, "sending packet: \n");
+			/*System.out.println("sending packet: ");
+			for (byte b : ackPacket.getData()) {
+				System.out.print(b);
+			}
+			System.out.println();*/
+			
+			vq.printThis(false, "sending packet: \n");
 			//vq.printThis(false, "\npacket: ");
 			vq.printThis2(verboseMode, ackPacket);
 			
@@ -426,8 +439,14 @@ public class Client {
 		validateAck(ackPacket);
 
 		// check ack 0
-
-		vq.printThis(verboseMode, "received: \n");
+		
+	/*	System.out.println("received: ");
+		for (byte b : ackPacket.getData()) {
+			System.out.print(b);
+		}
+		System.out.println();*/
+		
+		vq.printThis(false, "received: \n");
 		//vq.printThis(false, "\npacket: ");
 		vq.printThis2(verboseMode, ackPacket);
 
@@ -474,12 +493,20 @@ public class Client {
 			}
 
 			// dataPacket.setData(dataForPacket);
-			vq.printThis(verboseMode,"sending data " + currentBlock + " of size: " + dataForPacket.length + "\n");
+			vq.printThis(verboseMode,"sending data " + currentBlock + " of size: " + dataForPacket.length);
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
 					serverPort);
 			sendReceiveSocket.send(dataPacket);
+
+			/*System.out.println("sent: ");
+
+			for (byte b : dataPacket.getData()) {
+				System.out.print(b);
+			}
+
+			System.out.println();*/
 			
-			vq.printThis(verboseMode, "sent:\n");
+			vq.printThis(false, "sent:\n");
 			//vq.printThis(false, "\npacket: ");
 			vq.printThis2(verboseMode, dataPacket);
 
@@ -489,14 +516,23 @@ public class Client {
 				try {
 					ackPacket = receiveAck();
 					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
+				/*	System.out.println("received ack " + ackNum);
+
+					System.out.println("received: ");
+
+					for (byte b : ackPacket.getData()) {
+						System.out.print(b);
+					}
+
+					System.out.println();*/
 					
-					vq.printThis(verboseMode, "received ack "+ ackNum + "\n");
-					vq.printThis(verboseMode, "received: \n");
+					vq.printThis(false, "received ack "+ ackNum + "\n");
+					vq.printThis(false, "received: \n");
 					//vq.printThis(false, "\npacket: ");
 					vq.printThis2(verboseMode, ackPacket);
 
 				} catch (SocketTimeoutException e) {
-					vq.printThis(verboseMode,"Timeout receiving ack " + currentBlock + " resending data " + (currentBlock));
+					System.out.println("Timeout receiving ack " + currentBlock + " resending data " + (currentBlock));
 					currentBlock--;
 					timeout++;
 					if (timeout == timeoutLim) {
@@ -558,7 +594,7 @@ public class Client {
 			throw new ReceivedErrorException(ackPacket);
 		} else {
 			// Not an ackPacket
-			vq.printThis(verboseMode,"did not receive ack packet");
+			System.out.println("did not receive ack packet");
 			throw new ErrorException("Received an unexpected packet. Opcode: " + opcode, ILLEGAL_OPER_ERR_CODE);
 		}
 
@@ -570,12 +606,12 @@ public class Client {
 
 		// check the packet number matches what server is expecting
 		if (ackNumber < currentBlock) {
-			vq.printThis(verboseMode,ackNumber + "  " + currentBlock);
-			vq.printThis(verboseMode,"received duplicate ack packet");
+			System.out.println(ackNumber + "  " + currentBlock);
+			System.out.println("received duplicate ack packet");
 			return true;
 			// ignore and send next data
 		} else if (ackNumber > currentBlock) {
-			vq.printThis(verboseMode,"received ack from the future");
+			System.out.println("received ack from the future");
 			throw new ErrorException("received ack from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 

@@ -1,4 +1,4 @@
-package server;
+package TFTP;
 
 import java.net.DatagramPacket;
 
@@ -75,9 +75,7 @@ public class VerboseQuiet {
 		
 	}	
 }
-		
-		
-		
-	
 
-
+		
+		
+		

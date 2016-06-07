@@ -15,7 +15,7 @@ import server.VerboseQuiet;
 
 public class WriteRequestHandler extends RequestHandler implements Runnable {
 	private boolean isNewData = true;
-	
+	VerboseQuiet vQ = new VerboseQuiet(Server.isVerbose());
 	
 	public WriteRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
@@ -29,17 +29,13 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		File newFile = new File(SERVER_DIRECTORY + filename);
 		File directory = new File(SERVER_DIRECTORY);
 		long freeSpace = directory.getFreeSpace();
-		VerboseQuiet vQ = new VerboseQuiet(Server.isVerbose());
+		
 		
 		if( freeSpace <512){
 			System.out.println("Space is full on the disk");
 			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
 			
 		}
-		
-		
-		
-		
 		
 		
 		
@@ -62,11 +58,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		DatagramPacket ackPacket = buildAckPacket(0);
 		inOutSocket.send(ackPacket);
 
-		
-
-		
-
-		vQ.printThis(false, "sent: \n");
+		vQ.printThis(Server.isVerbose(), "sent: \n");
 		vQ.printThis2(Server.isVerbose(), ackPacket);
 		
 		
@@ -90,7 +82,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 					// Receive data packet
 					dataPacket = receiveData();
 					
-					vQ.printThis(false, "received: \n");
+					vQ.printThis(Server.isVerbose(), "received: \n");
 					//prints output only id
 					vQ.printThis2(Server.isVerbose(), dataPacket);
 
@@ -127,7 +119,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			// Build ack
 			ackPacket = buildAckPacket(receivedNumber);
 
-			vQ.printThis(false, "sent: \n");
+			vQ.printThis(Server.isVerbose(), "sent: \n");
 			//vQ.printThis(false, "packet: \n");
 			vQ.printThis2(Server.isVerbose(), ackPacket);
 			
@@ -183,7 +175,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
-
+		
 		InetAddress dataAddress = dataPacket.getAddress();
 		int dataPort = dataPacket.getPort();
 
@@ -227,6 +219,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 	@Override
 	public void run() {
+	
+		
 		try {
 			writeRequest();
 		} catch (IOException e) {
