@@ -7,7 +7,7 @@ package TFTP;
 /* the following code deals with the client part of this exercise.
  *in the following exercise the client is send a Read Write or Test message to the Errsim which then be sended to the server
  * further explanation about how the connection between the errSim and the server will is explained in the two other classes.*/
-import java.io.BufferedInputStream;
+import java.io.BufferedInputStream; 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +25,7 @@ import java.util.Scanner;
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 import exceptions.UnknownIDException;
+import intermediateSim.ErrorInit;
 
 public class Client {
 	DatagramPacket sendPacket, receivePacket; // create two DatagramPacket to
@@ -45,7 +46,7 @@ public class Client {
 	}; // same for decision both enum are input in the console of the client
 
 	private static String fname;
-	private static final String CLIENT_DIRECTORY = System.getProperty("user.dir") + File.separator + "src"
+	private String clientDir = System.getProperty("user.dir") + File.separator + "src"
 			+ File.separator + "TFTP" + File.separator;
 	
 	private static final int DATA_SIZE = 512;
@@ -80,6 +81,7 @@ public class Client {
 	private boolean readOrWrite = false;
 	private boolean testingMode = false;
 	private int portSelected;
+	private boolean newDir = false;
 
 	public Client() {
 		try {
@@ -122,6 +124,33 @@ public class Client {
 			}
 		}
 		
+		/**
+		 * 
+		 * get IP from user
+		 * 
+		 */
+		while (true) {
+			System.out.println("Please type in the host IP. If sending to localhost, hit enter");
+
+			String ip = input.nextLine();
+
+			if (ip.isEmpty()) {
+				serverAddress = InetAddress.getLocalHost();
+				System.out.println("Sending to local host");
+				break;
+			}
+			if (validateIPAddress(ip) == false) {
+				continue;
+			}
+			try {
+				serverAddress = InetAddress.getByName(ip);
+				System.out.println("sending to ip: "+ip);
+			} catch (UnknownHostException e) {
+				System.out.println("");
+			}
+			break;
+		}
+		
 		// it runs threw all the possible answers if none are applicable it
 		// recursively go back to inter()
 		while(readOrWrite == false){
@@ -145,6 +174,57 @@ public class Client {
 	
 		}
 		}
+		
+		
+		String choices;
+		boolean gdanswear = false;
+		do {
+			System.out.println("Your current directory is: " + clientDir);
+			System.out.println("Would you like to change your directory: [y/N]");
+			choices = input.nextLine(); // reads the input String
+
+			if (!(choices.equalsIgnoreCase("y")) && !(choices.equalsIgnoreCase("N"))) {
+				System.out.println("invalid choice.  Please try again...");
+
+			} else {
+				gdanswear = true;
+			}
+
+		} while (gdanswear == false);
+		if (choices.equalsIgnoreCase("y")) {
+			while (newDir == false) {
+				System.out.println("Please enter the name of the directory you would like to switch to.");
+				String directory = input.nextLine(); // reads the input String
+				if (!directory.isEmpty()) {
+					File dir = new File(directory);
+					if (dir.isDirectory() && dir.exists()) {
+						if (dir.canWrite() && !directory.equals("\\")) {
+							clientDir = directory + File.separator;
+							newDir = true;
+							System.out.println("Your new directory is: " + clientDir);
+							if (request == Decision.RRQ) {
+								try {
+									File.createTempFile("test", null, dir).deleteOnExit();
+									newDir = true;
+								} catch (IOException noA) {
+									System.out.println("Access to this directory is denied: Access violation");
+									newDir = false;
+								}
+							}
+						} else {
+							System.out.println("You can't write to this directory");
+							newDir = false;
+						}
+					} else {
+						System.out.println("Directory does not exist, please try another.");
+						newDir = false;
+					}
+				} else {
+					break;
+				}
+			}
+			// gets a file directory from the user
+		} // end of the if statement if the want to change a file
 
 		// gets a file directory from the user
 		System.out.println("Please choose a file to modify.  Type in a file name: ");
@@ -155,7 +235,7 @@ public class Client {
 			while (invalidFile) {
 				fname = input.nextLine();
 				try {
-					FileInputStream localFile = new FileInputStream(CLIENT_DIRECTORY + fname);
+					FileInputStream localFile = new FileInputStream(clientDir + fname);
 					BufferedInputStream in = new BufferedInputStream(localFile);
 					if(in.available() >= 1000000){
 						System.out.println("Your selected file is too big.");
@@ -166,7 +246,7 @@ public class Client {
 					}					
 
 				} catch (FileNotFoundException nF) {
-					System.out.println("The file " + fname + " does not exist in your directory:" + CLIENT_DIRECTORY);
+					System.out.println("The file " + fname + " does not exist in your directory:" + clientDir);
 					System.out.println("Please choose a correct file to send.");
 					invalidFile = true;
 				}
@@ -222,6 +302,34 @@ public class Client {
 			}
 		}
 	}
+	
+	public boolean validateIPAddress(String ipAddress) {
+		final int upperLim = 255;
+		final int lowerLim = 0;
+		final int ipLength = 4;
+
+		try {
+			// Split the address by decimals
+			String[] parts = ipAddress.split("\\.");
+
+			// Check each part so that it does not violate the upper and lower
+			// limit
+			for (String s : parts) {
+				int i = Integer.parseInt(s);
+				if ((i < lowerLim) || (i > upperLim)) {
+					return false;
+				}
+			}
+
+			// Check the length is valid
+			if (parts.length != ipLength) {
+				return false;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
 
 	/**
 	 * builds a request. Opcode must be modified to read or write.
@@ -241,11 +349,9 @@ public class Client {
 
 		DatagramPacket requestPacket = new DatagramPacket(data, data.length);
 
-		try {
-			requestPacket.setAddress(InetAddress.getLocalHost());
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+	
+		requestPacket.setAddress(serverAddress);
+		
 		requestPacket.setPort(portSelected);
 
 		return requestPacket;
@@ -330,9 +436,9 @@ public class Client {
 		DatagramPacket dataPacket;
 		DatagramPacket ackPacket = buildAckPacket(0);
 
-		File newFile = new File(CLIENT_DIRECTORY + fname);
+		File newFile = new File(clientDir + fname);
 		
-		File directory = new File(CLIENT_DIRECTORY);
+		File directory = new File(clientDir);
 		long freeSpace = directory.getFreeSpace();
 		
 	/*	if( freeSpace <512){
@@ -421,7 +527,11 @@ public class Client {
 			
 			if (resending == false && isNewData) {
 				timeout = 0;
-				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
+				try {
+					writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
+				} catch (IOException e) {
+					throw new ErrorException("Error saving data received to the file", 0);
+				}
 			}
 			
 			
@@ -461,7 +571,12 @@ public class Client {
 		sendReceiveSocket.send(request);
 
 		// Receive ack 0
-		DatagramPacket ackPacket = receiveAck();
+		DatagramPacket ackPacket = buildAckPacket(0);
+		try {
+			ackPacket = receiveAck();
+		} catch (SocketTimeoutException e) {
+			throw new ErrorException("Timed out waiting for ack 0", 0);
+		}
 		validateAck(ackPacket);
 
 		// check ack 0
@@ -481,7 +596,7 @@ public class Client {
 		// DatagramPacket dataPacket = new DatagramPacket(dataForPacket,
 		// dataForPacket.length, serverAddress, serverPort);
 
-		in = new BufferedInputStream(new FileInputStream(CLIENT_DIRECTORY + fname));
+		in = new BufferedInputStream(new FileInputStream(clientDir + fname));
 
 		byte[] dataToSend = new byte[dataSize];
 
@@ -494,14 +609,19 @@ public class Client {
 			// number i
 			
 			if(resending == false){
-			dataSize = in.available();
-			if (dataSize >= DATA_SIZE) {
-				dataToSend = new byte[DATA_SIZE];
-			} else if (dataSize > 0) {
-				dataToSend = new byte[dataSize];
-			}
+				try {
+					dataSize = in.available();
 
-			sizeOfDataRead = in.read(dataToSend);
+					if (dataSize >= DATA_SIZE) {
+						dataToSend = new byte[DATA_SIZE];
+					} else if (dataSize > 0) {
+						dataToSend = new byte[dataSize];
+					}
+
+					sizeOfDataRead = in.read(dataToSend);
+				} catch (IOException e) {
+					throw new ErrorException("Failed getting data to send", 0);
+				}
 
 			dataForPacket = new byte[4 + dataToSend.length];
 			dataForPacket[0] = 0;

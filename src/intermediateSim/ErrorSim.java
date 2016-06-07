@@ -3,7 +3,9 @@ package intermediateSim;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 /**
@@ -36,6 +38,9 @@ public class ErrorSim implements Runnable {
 	private int mode;
 	private int corruption;
 	private boolean newError = true;
+	private String serverAddress;
+	private InetAddress serverIP;
+	private InetAddress clientIP;
 	/**
 	 * Constructor for the ErrorSim that is passed the initial packet and client port,
 	 * as well as the user input need to select which error to create.	
@@ -46,16 +51,25 @@ public class ErrorSim implements Runnable {
 	 */
 	public ErrorSim(DatagramPacket packet, Scanner reader, ErrorSelect eS) {
 		this.clientPort = packet.getPort();
+		this.clientIP = packet.getAddress();
 		this.initPacket = packet;
 		this.blockNum = eS.blockNum; //Holds the block which the user wishes to alter
 		this.opCode = eS.OpCode; //Holds the user input for Ack or DATA
 		this.mode = eS.mode; //Holds the type of error the user wants to create
 		this.corruption = eS.corruption;
+		this.serverAddress = eS.serverAddress;
 		try {
 			sendReceiveSocket = new DatagramSocket();
 			
 		} catch (SocketException se) {
 			System.out.println("Socket Exception on ErrorSim");
+			System.exit(1);
+		}
+		try {
+			serverIP = InetAddress.getByName(serverAddress);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			System.out.println("Unknown host exception");
 			System.exit(1);
 		}
 		
@@ -102,15 +116,16 @@ public class ErrorSim implements Runnable {
 		if (serverPort == -1) {
 			serverPort = receivePacket.getPort();
 		}
-
+		
+		
 		// Passes the packet from server to client, and client to server.
 		// Creates a new packet with the correct destination address
 		if (receivePacket.getPort() == serverPort) {
 			receivePacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(),
-					receivePacket.getAddress(), clientPort);
+					clientIP, clientPort);
 		} else {
 			receivePacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(),
-					receivePacket.getAddress(), serverPort);
+					serverIP, serverPort);
 		}
 
 		
@@ -235,10 +250,10 @@ public class ErrorSim implements Runnable {
 
 	@Override
 	public void run() {
-
+	
 		// Create the datagram packet for the request
 	   DatagramPacket initialRequest = new DatagramPacket(initPacket.getData(), initPacket.getLength(),
-			initPacket.getAddress(), INITIAL_SERVER_PORT);
+			serverIP, INITIAL_SERVER_PORT);
 		sendPacket(initialRequest);
 
 		// Loop until the send and receive method is finished

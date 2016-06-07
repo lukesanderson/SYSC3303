@@ -39,6 +39,7 @@ public class ErrorInit {
 	 */
 	public void receiveAndEcho() {
 		int clientPort;
+		InetAddress clientIP;
 
 		ErrorSelect eS = new ErrorSelect(); // The user input used to select
 											// which kind of error the user
@@ -68,7 +69,9 @@ public class ErrorInit {
 			vQ.printThis(false, "\nPacket received from host.");
 			vQ.printThis(false, "\nHost address: " + receivePacket.getAddress());
 			clientPort = receivePacket.getPort();
+			clientIP = receivePacket.getAddress();
 			vQ.printThis(false, "\nHost port: " + clientPort);
+			vQ.printThis(false, "\nIP address: " + clientIP);
 			vQ.printThis(false, "\nLength: " + receivePacket.getLength());
 			vQ.printThis(false, "\nContaining: \n");
 			// vQ.printThis(false, new String(receivePacket.getData()));
@@ -94,4 +97,6 @@ public class ErrorInit {
 		ErrorInit e = new ErrorInit();
 		e.receiveAndEcho();
 	}
+	
+	
 }
