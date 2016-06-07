@@ -41,7 +41,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		DatagramPacket ackPacket = buildAckPacket(0);
 		inOutSocket.send(ackPacket);
 
-		System.out.println("sent: ");
+		System.out.println("sent initial: ");
 
 		for (byte b : ackPacket.getData()) {
 			System.out.print(b);
@@ -59,22 +59,23 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			System.out.println("Client tried to write to read only space");
 			throw new ErrorException("You are trying to write to a read only space", ACCESS_DENIED_CODE);
 		}
-
+		
 		do {
+			boolean receivedData = false;
 			// receive and validate data
 			do {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					System.out.println("received: ");
-					
+					System.out.println("\nReceived: ");
+					receivedData = true;
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
 					}
 
 					System.out.println();
 				} catch (SocketTimeoutException e) {
-					System.out.println("Timeout receiving Data " + currentBlock + " resending ack ");
+					System.out.println("Timeout receiving Data " + currentBlock + ", Waiting for data again. ");
 					timeout++;
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
@@ -102,17 +103,14 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			}
 
 			// Build ack
-			
+			if(receivedData == true){
 			ackPacket = buildAckPacket(receivedNumber);
-			
-			System.out.println("sent: ");
+			inOutSocket.send(ackPacket);
+			System.out.println("\nsent: ");
 			for (byte b : ackPacket.getData()) {
 				System.out.print(b);
 			}
-
-			System.out.println();
-			if(timeout < 1){
-			inOutSocket.send(ackPacket);
+			receivedData = false;
 			}
 			if (resending == false) {
 				currentBlock++;
@@ -198,7 +196,6 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		}
 
 		if (dataPacket.getLength() < 512) {
-			System.out.println("ending.");
 			transfering = false;
 		}
 

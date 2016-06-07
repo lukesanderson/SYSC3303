@@ -7,7 +7,7 @@ package TFTP;
 /* the following code deals with the client part of this exercise.
  *in the following exercise the client is send a Read Write or Test message to the Errsim which then be sended to the server
  * further explanation about how the connection between the errSim and the server will is explained in the two other classes.*/
-import java.io.BufferedInputStream;
+import java.io.BufferedInputStream; 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,16 +17,15 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
 import java.util.Scanner;
 
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 import exceptions.UnknownIDException;
+import intermediateSim.ErrorInit;
 
 public class Client {
 	DatagramPacket sendPacket, receivePacket; // create two DatagramPacket to
@@ -47,9 +46,9 @@ public class Client {
 	}; // same for decision both enum are input in the console of the client
 
 	private static String fname;
-	private static String client_directory = System.getProperty("user.dir") + File.separator + "src" + File.separator
-			+ "TFTP" + File.separator;
-
+	private String clientDir = System.getProperty("user.dir") + File.separator + "src"
+			+ File.separator + "TFTP" + File.separator;
+	
 	private static final int DATA_SIZE = 512;
 	private static final int PACKET_SIZE = 516;
 	private static int timeoutLim = 3;
@@ -57,6 +56,11 @@ public class Client {
 	private boolean resending = false;
 	private int currentBlock = 1;
 	private boolean duplicateAck = false;
+
+	
+	
+	
+	
 
 	// Error codes
 	private static final int FILE_NOT_FOUND_CODE = 1;
@@ -78,7 +82,6 @@ public class Client {
 	private boolean testingMode = false;
 	private int portSelected;
 	private boolean newDir = false;
-	// private InetAddress serverAddress;
 
 	public Client() {
 		try {
@@ -102,34 +105,25 @@ public class Client {
 		Decision request = Decision.RRQ; // default decision which is Read
 		input = new Scanner(System.in); // run a new scanner to scan the input
 										// from the user
-
-//		Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
-//
-//		while (networks.hasMoreElements()) {
-//			NetworkInterface g = networks.nextElement();
-//
-//			System.out.println(g.getInetAddresses());
-//
-//		}
-
-		while (testingMode == false) {
-			System.out.println("Would you like to proceed in (N)ormal or (T)est mode?");
-			String testMode = input.nextLine();
-			if (testMode.equalsIgnoreCase("T")) {
+		
+		System.out.println("Would you like to proceed in (N)ormal or (T)est mode?");
+		String testMode = input.nextLine();
+		while(testingMode == false){
+			if(testMode.equalsIgnoreCase("T")){
 				System.out.println("Testing Mode Selected.");
 				portSelected = INTERMEDIARY_LISTENER;
 				testingMode = true;
-			} else if (testMode.equalsIgnoreCase("N")) {
+			}else if (testMode.equalsIgnoreCase("N")){
 				System.out.println("Normal Mode Selected.");
 				portSelected = SERVER_LISTENER;
-
 				testingMode = true;
-			} else {
+			}
+			else{
 				System.out.println("Invalid mode, please provide valid input.");
 				testingMode = false;
 			}
 		}
-
+		
 		/**
 		 * 
 		 * get IP from user
@@ -156,33 +150,36 @@ public class Client {
 			}
 			break;
 		}
-
-		while (readOrWrite == false) {
+		
+		// it runs threw all the possible answers if none are applicable it
+		// recursively go back to inter()
+		while(readOrWrite == false){
 			System.out.println("choose (R)ead Request, (W)rite Request, or (Q)uit?");
 			String choice = input.nextLine(); // reads the input String
-			if (choice.equalsIgnoreCase("R")) {
-				request = Decision.RRQ;
-				System.out.println("Client: send a read request.");
-				readOrWrite = true;
-			} else if (choice.equalsIgnoreCase("W")) {
-				request = Decision.WRQ;
-				System.out.println("Client:  send a write request.");
-				readOrWrite = true;
-			} else if (choice.equalsIgnoreCase("Q")) {
-				System.out.println("Goodbye!");
-				readOrWrite = true;
-				System.exit(1);
-			} else {
-				readOrWrite = false;
-				System.out.println("invalid choice.  Please try again...");
-
-			}
+		if (choice.equalsIgnoreCase("R")) {
+			request = Decision.RRQ;
+			System.out.println("Client: send a read request.");
+			readOrWrite = true;
+		} else if (choice.equalsIgnoreCase("W")) {
+			request = Decision.WRQ;
+			System.out.println("Client:  send a write request.");
+			readOrWrite = true;
+		} else if (choice.equalsIgnoreCase("Q")) {
+			System.out.println("Goodbye!");
+			readOrWrite = true;
+			System.exit(1);
+		} else {
+			readOrWrite = false;
+			System.out.println("invalid choice.  Please try again...");
+	
 		}
-
+		}
+		
+		
 		String choices;
 		boolean gdanswear = false;
 		do {
-			System.out.println("Your current directory is: " + client_directory);
+			System.out.println("Your current directory is: " + clientDir);
 			System.out.println("Would you like to change your directory: [y/N]");
 			choices = input.nextLine(); // reads the input String
 
@@ -202,9 +199,9 @@ public class Client {
 					File dir = new File(directory);
 					if (dir.isDirectory() && dir.exists()) {
 						if (dir.canWrite() && !directory.equals("\\")) {
-							client_directory = directory + File.separator;
+							clientDir = directory + File.separator;
 							newDir = true;
-							System.out.println("Your new directory is: " + client_directory);
+							System.out.println("Your new directory is: " + clientDir);
 							if (request == Decision.RRQ) {
 								try {
 									File.createTempFile("test", null, dir).deleteOnExit();
@@ -227,33 +224,35 @@ public class Client {
 				}
 			}
 			// gets a file directory from the user
-		} // end of the if statment if the want to change a file
-			// gets a file directory from the user
-		System.out.println("Please choose a file to modify.  Type in a file name: ");
+		} // end of the if statement if the want to change a file
 
-		// Checks for file size, and if file exists in directory
+		// gets a file directory from the user
+		System.out.println("Please choose a file to modify.  Type in a file name: ");
+		
+		
+		//Checks for file size, and if file exists in directory
 		if (request == Decision.WRQ) {
 			while (invalidFile) {
 				fname = input.nextLine();
 				try {
-					FileInputStream localFile = new FileInputStream(client_directory + fname);
+					FileInputStream localFile = new FileInputStream(clientDir + fname);
 					BufferedInputStream in = new BufferedInputStream(localFile);
-					if (in.available() >= 1000000) {
+					if(in.available() >= 1000000){
 						System.out.println("Your selected file is too big.");
 						System.out.println("Please select a file less than 1 mB");
 						invalidFile = true;
-					} else {
+					}else{
 						invalidFile = false;
-					}
+					}					
 
 				} catch (FileNotFoundException nF) {
-					System.out.println("The file " + fname + " does not exist in your directory:" + client_directory);
+					System.out.println("The file " + fname + " does not exist in your directory:" + clientDir);
 					System.out.println("Please choose a correct file to send.");
 					invalidFile = true;
 				}
 			}
-
-		} else {
+			
+		}else{
 			fname = input.nextLine();
 		}
 
@@ -296,16 +295,14 @@ public class Client {
 
 			// Send error
 			try {
-				if (err.getAddress() != null) {
-					sendReceiveSocket.send(err);
-				}
+				sendReceiveSocket.send(err);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
 	}
-
+	
 	public boolean validateIPAddress(String ipAddress) {
 		final int upperLim = 255;
 		final int lowerLim = 0;
@@ -352,7 +349,9 @@ public class Client {
 
 		DatagramPacket requestPacket = new DatagramPacket(data, data.length);
 
+	
 		requestPacket.setAddress(serverAddress);
+		
 		requestPacket.setPort(portSelected);
 
 		return requestPacket;
@@ -401,6 +400,7 @@ public class Client {
 			System.out.println("received duplicate data packet");
 			isNewData = false;
 			currentBlock--;
+			return false;
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");
@@ -436,38 +436,28 @@ public class Client {
 		DatagramPacket dataPacket;
 		DatagramPacket ackPacket = buildAckPacket(0);
 
-		File newFile = new File(client_directory + fname);
-
-		File directory = new File(client_directory);
+		File newFile = new File(clientDir + fname);
+		
+		File directory = new File(clientDir);
 		long freeSpace = directory.getFreeSpace();
-
-		/*
-		 * if( freeSpace <512){ System.out.println("Space is full on the disk");
-		 * throw new ErrorException("No more room for file - Disk is full",
-		 * DISK_FULL_ERROR_CODE);
-		 * 
-		 * }
-		 */
+		
+	/*	if( freeSpace <512){
+			System.out.println("Space is full on the disk");
+			throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
+			
+		}*/
+		
 
 		if (!newFile.exists()) {
-			try {
-				newFile.createNewFile();
-			} catch (IOException noA) {
-				System.out.println("Access to this directory is denied: Access violation");
-				throw new ErrorException("Access to client directory is denied", 2);
-			}
+			newFile.createNewFile();
 		}
 
-		// @SuppressWarnings("resource")
+		@SuppressWarnings("resource")
 		BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(newFile));
 
 		// get data1 to save address and port
 
-		try {
-			dataPacket = receiveData();
-		} catch (SocketTimeoutException e) {
-			throw new ErrorException("Timed out waiting for data 1", 0);
-		}
+		dataPacket = receiveData();
 
 		validateData(dataPacket);
 
@@ -498,22 +488,21 @@ public class Client {
 		currentBlock++;
 
 		do {
+			boolean receivedData = false;
 			// receive and validate data
 			do {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					System.out.println("received: ");
+					System.out.println("\nreceived: ");
+					receivedData = true;
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
 					}
 					System.out.println();
 				} catch (SocketTimeoutException e) {
-					System.out.println(
-
-					"Timeout receiving data " + currentBlock + " resending previous ack ");
+					System.out.println("Timeout receiving data " + currentBlock + " waiting for data again. ");
 					timeout++;
-					resending = true;
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
 					}
@@ -525,29 +514,37 @@ public class Client {
 
 			int receivedblockNum = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
-			if (freeSpace < dataPacket.getLength() - 4) {
+			
+			if( freeSpace < dataPacket.getLength()-4){
 				throw new ErrorException("No more room for file - Disk is full", DISK_FULL_ERROR_CODE);
 			}
 
-			freeSpace -= dataPacket.getLength() - 4;
-
-			if (resending == false) {
-
+			freeSpace-= dataPacket.getLength() -4;
+			
+			
+			
+			
+			
+			if (resending == false && isNewData) {
+				timeout = 0;
 				try {
 					writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 				} catch (IOException e) {
 					throw new ErrorException("Error saving data received to the file", 0);
 				}
 			}
+			
+			
 			// Build the Ack
+			if(receivedData == true){
 			ackPacket = buildAckPacket(receivedblockNum);
-
-			System.out.println("sending packet: ");
+			sendReceiveSocket.send(ackPacket);
+			System.out.println("\nsending packet: ");
 			for (byte b : ackPacket.getData()) {
 				System.out.print(b);
 			}
-			System.out.println();
-			sendReceiveSocket.send(ackPacket);
+			receivedData = false;
+			}
 			if (resending == false) {
 				currentBlock++;
 			}
@@ -599,7 +596,7 @@ public class Client {
 		// DatagramPacket dataPacket = new DatagramPacket(dataForPacket,
 		// dataForPacket.length, serverAddress, serverPort);
 
-		in = new BufferedInputStream(new FileInputStream(client_directory + fname));
+		in = new BufferedInputStream(new FileInputStream(clientDir + fname));
 
 		byte[] dataToSend = new byte[dataSize];
 
@@ -610,9 +607,8 @@ public class Client {
 			// iterate the file in 512 byte chunks
 			// Each iteration send the packet and receive the ack to match block
 			// number i
-
-			if (resending == false) {
-
+			
+			if(resending == false){
 				try {
 					dataSize = in.available();
 
@@ -627,23 +623,24 @@ public class Client {
 					throw new ErrorException("Failed getting data to send", 0);
 				}
 
-				dataForPacket = new byte[4 + dataToSend.length];
-				dataForPacket[0] = 0;
-				dataForPacket[1] = 3;
-				// Add block number to packet data
-				dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
-				dataForPacket[3] = (byte) (currentBlock & 0xFF);
+			dataForPacket = new byte[4 + dataToSend.length];
+			dataForPacket[0] = 0;
+			dataForPacket[1] = 3;
+			// Add block number to packet data
+			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
+			dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
-				// Copy the data from the file into the packet data
-				if (dataForPacket.length > 4) {
-					System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
-				}
+			// Copy the data from the file into the packet data
+			if (dataForPacket.length > 4) {
+				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+			}
 			}
 			// dataPacket.setData(dataForPacket);
-			// if(duplicateAck == false){
+			//if(duplicateAck == false){
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
 			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, serverAddress,
 					serverPort);
+			if(timeout <= 2){
 			sendReceiveSocket.send(dataPacket);
 			resending = false;
 			System.out.println("sent: ");
@@ -651,12 +648,14 @@ public class Client {
 			for (byte b : dataPacket.getData()) {
 				System.out.print(b);
 			}
+			}
 
 			System.out.println();
-			// }else{
-			// duplicateAck = false;
-			// }
-
+			//}else{
+			//	duplicateAck = false;
+			//}
+			
+			
 			// Receive ack packet
 
 			do {
@@ -675,7 +674,8 @@ public class Client {
 
 				} catch (SocketTimeoutException e) {
 					System.out.println("Timeout receiving ack " + currentBlock + " resending data " + (currentBlock));
-
+					
+					
 					timeout++;
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
@@ -683,11 +683,12 @@ public class Client {
 					resending = true;
 					break;
 				}
+				
 
 			} while (validateAck(ackPacket));
-
-			if (resending == false) {
-				currentBlock++;
+			
+			if(resending == false){
+			currentBlock++;
 			}
 
 			if (sizeOfDataRead < 512) {
@@ -749,10 +750,10 @@ public class Client {
 		}
 
 		// check the packet number matches what server is expecting
-		if (ackNumber < currentBlock) {
+		if (ackNumber < currentBlock && ackNumber != 0) {
 			System.out.println(ackNumber + "  " + currentBlock);
 			System.out.println("received duplicate ack packet");
-			// duplicateAck = true;
+			//duplicateAck = true;
 			return true;
 			// ignore and send next data
 		} else if (ackNumber > currentBlock) {

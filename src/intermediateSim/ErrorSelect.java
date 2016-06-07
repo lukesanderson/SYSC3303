@@ -18,15 +18,59 @@ public class ErrorSelect {
 	private int vq = -1;
 	public int corruption = -1;
 	public boolean verboseMode = true;
+	public String serverAddress = null;
+	private boolean validIP = true;
 	private static final Scanner READER = new Scanner(System.in);
+	
+	/**
+     * Validates the IP address passed is of valid format
+     * (ie XXX.XXX.XXX.XXX where values are not exceeded).
+     *
+     * @param ipAddress IP Address to validate the format
+     * @return True if the IP Address is valid
+     */
+    public boolean validateIPAddress(String ipAddress) {
+        final int upperLim = 255;
+        final int lowerLim = 0;
+        final int ipLength = 4;
+        try{
+        // Split the address by decimals
+        String[] parts = ipAddress.split( "\\." );
+
+        // Check each part so that it does not violate the upper and lower limit
+        for (String s : parts) {
+        	
+            int i = Integer.parseInt(s);
+            if ( (i < lowerLim) || (i > upperLim) ) {
+                return true;
+            }
+        }
+
+        // Check the length is valid
+        if ( parts.length != ipLength ) {
+            return true;
+        }
+        }catch (NumberFormatException e){
+        	System.out.println("Invalid IP");
+        	return true;
+        }
+        return false;
+    }
 
 	public void menu() throws IOException {
 
 		
-		System.out.print("\nError Simulator \n");
-		//System.out.println("Would you like to run the ErrorSim in (v)erbose or (q)uiet mode?");
-		//String verbose = READER.nextLine();
+		System.out.println("Error Simulator \n");
+		//System.out.println("Your IP address is: " + Inet4Address.getAddress()[0]);
 
+		while (validIP == true) {
+			System.out.println("Please enter the server IP:");
+			serverAddress = READER.nextLine();
+			validIP = validateIPAddress(serverAddress);
+		}
+		
+
+		
 		while (vq == -1) {
 			System.out.println("Would you like to run the ErrorSim in (v)erbose or (q)uiet mode?");
 			String verbose = READER.nextLine();
@@ -43,6 +87,8 @@ public class ErrorSelect {
 				vq = -1;
 			}
 		}
+		
+		
 		
 	
 

@@ -51,42 +51,48 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		// Data 1 is read
 		int sizeOfDataRead = 0;
 
+		DatagramPacket dataPacket;
+
 		while (transfering) {
 
-			if(resending == false){
-			dataSize = in.available();
+			if (resending == false) {
+				dataSize = in.available();
 
-			if (dataSize >= DATA_SIZE) {
-				dataToSend = new byte[DATA_SIZE];
-			} else if (dataSize > 0) {
-				dataToSend = new byte[dataSize];
+				if (dataSize >= DATA_SIZE) {
+					dataToSend = new byte[DATA_SIZE];
+				} else if (dataSize > 0) {
+					dataToSend = new byte[dataSize];
+				}
+
+				sizeOfDataRead = in.read(dataToSend);
+
+				dataForPacket = new byte[4 + dataToSend.length];
+				dataForPacket[0] = 0;
+				dataForPacket[1] = 3;
+				// Add block number to packet data
+				dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
+				dataForPacket[3] = (byte) (currentBlock & 0xFF);
+
+				// Copy the data from the file into the packet data
+				if (dataForPacket.length > 4) {
+					System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
+				}
+
+				// Set packet data
+
+				// PRINT DATA HERE
+
+				// Send data Packet
 			}
-
-			sizeOfDataRead = in.read(dataToSend);
-
-			dataForPacket = new byte[4 + dataToSend.length];
-			dataForPacket[0] = 0;
-			dataForPacket[1] = 3;
-			// Add block number to packet data
-			dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
-			dataForPacket[3] = (byte) (currentBlock & 0xFF);
-
-			// Copy the data from the file into the packet data
-			if (dataForPacket.length > 4) {
-				System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
-			}
-			}
-			// Set packet data
+			dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress, clientPort);
 
 			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
-			// PRINT DATA HERE
-
-			// Send data Packet
-			DatagramPacket dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress,
-					clientPort);
 
 			inOutSocket.send(dataPacket);
-			resending = false;
+			if (resending) {
+				resending = false;
+			}
+
 			System.out.println("sent: ");
 
 			for (byte b : dataPacket.getData()) {
@@ -117,13 +123,14 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
 					}
-
 					resending = true;
 					break;
 				}
 			} while (validateAck(ackPacket));
 
-			currentBlock++;
+			if (resending == false) {
+				currentBlock++;
+			}
 			if (sizeOfDataRead < 512) {
 				// Transferring should end
 				transfering = false;
@@ -201,8 +208,8 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		try {
 			readRequest();
 		} catch (ReceivedErrorException e) {
-			System.out.println("Received error packet. message: ");
-			System.out.println(e.getMessage());
+			System.out.println("Received error packet. message: \n");
+			System.out.println(e.getErrorCode());
 		} catch (ErrorException e) {
 
 			// Build the error
