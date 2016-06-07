@@ -294,6 +294,7 @@ public class Client {
 			System.out.println("received duplicate data packet");
 			isNewData = false;
 			currentBlock--;
+			return false;
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
 			System.out.println("received data from the future");
@@ -381,22 +382,21 @@ public class Client {
 		currentBlock++;
 
 		do {
+			boolean receivedData = false;
 			// receive and validate data
 			do {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					System.out.println("received: ");
+					System.out.println("\nreceived: ");
+					receivedData = true;
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
 					}
 					System.out.println();
 				} catch (SocketTimeoutException e) {
-					System.out.println(
-
-					"Timeout receiving data " + currentBlock + " resending previous ack ");
+					System.out.println("Timeout receiving data " + currentBlock + " waiting for data again. ");
 					timeout++;
-					resending = true;
 					if (timeout == timeoutLim) {
 						throw new ErrorException("Timeout limit reached", 0);
 					}
@@ -419,18 +419,22 @@ public class Client {
 			
 			
 			
-			if (resending == false) {
+			if (resending == false && isNewData) {
+				timeout = 0;
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
+			
+			
 			// Build the Ack
+			if(receivedData == true){
 			ackPacket = buildAckPacket(receivedblockNum);
-
-			System.out.println("sending packet: ");
+			sendReceiveSocket.send(ackPacket);
+			System.out.println("\nsending packet: ");
 			for (byte b : ackPacket.getData()) {
 				System.out.print(b);
 			}
-			System.out.println();
-			sendReceiveSocket.send(ackPacket);
+			receivedData = false;
+			}
 			if (resending == false) {
 				currentBlock++;
 			}

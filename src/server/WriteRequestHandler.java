@@ -67,7 +67,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					System.out.println("/nreceived: ");
+					System.out.println("\nReceived: ");
 					receivedData = true;
 					for (byte b : dataPacket.getData()) {
 						System.out.print(b);
@@ -103,14 +103,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			}
 
 			// Build ack
-			
-			
-
-			System.out.println();
 			if(receivedData == true){
 			ackPacket = buildAckPacket(receivedNumber);
 			inOutSocket.send(ackPacket);
-			System.out.println("sent: ");
+			System.out.println("\nsent: ");
 			for (byte b : ackPacket.getData()) {
 				System.out.print(b);
 			}
