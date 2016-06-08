@@ -18,8 +18,8 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 	private int dataSize = 512;
 	private BufferedInputStream in;
 
-	public ReadRequestHandler(DatagramPacket request, Server parent) {
-		super(request, parent);
+	public ReadRequestHandler(DatagramPacket request, Server parent, String dir) {
+		super(request, parent, dir);
 		// TODO Auto-generated constructor stub
 	}
 
@@ -33,7 +33,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 		String filename = getFileName(request.getData());
 
-		File readFile = new File(SERVER_DIRECTORY + filename);
+		File readFile = new File(serverDir + filename);
 
 		VerboseQuiet vQ = new VerboseQuiet(parentServer.isVerbose());
 
@@ -48,7 +48,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 		DatagramPacket ackPacket = null;
 
-		in = new BufferedInputStream(new FileInputStream(SERVER_DIRECTORY + filename));
+		in = new BufferedInputStream(new FileInputStream(serverDir + filename));
 
 		byte[] dataToSend = new byte[dataSize];
 

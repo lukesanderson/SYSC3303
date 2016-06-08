@@ -19,8 +19,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 	
 	private File theFile;
 
-	public WriteRequestHandler(DatagramPacket request, Server parent) {
-		super(request, parent);
+	public WriteRequestHandler(DatagramPacket request, Server parent, String dir) {
+		super(request, parent, dir);
 	}
 
 	@SuppressWarnings("resource")
@@ -28,8 +28,8 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		String filename = getFileName(request.getData());
 
-		theFile = new File(SERVER_DIRECTORY + filename);
-		File directory = new File(SERVER_DIRECTORY);
+		theFile = new File(serverDir + filename);
+		File directory = new File(serverDir);
 		long freeSpace = directory.getFreeSpace();
 
 		VerboseQuiet vQ = new VerboseQuiet(parentServer.isVerbose());
@@ -96,7 +96,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			freeSpace -= dataPacket.getLength() - 4;
 
 			// write block
-			if (resending == false && isNewData && dataPacket.getData()[4] != 0) {
+			if (resending == false && isNewData) {
 				timeout = 0;
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
@@ -197,9 +197,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
-		if (dataPacket.getLength() < 512 || dataPacket.getData()[4] == (byte)0) {
+		if (dataPacket.getLength() < 512) {
 			transfering = false;
 		}
+		//dataPacket.getData()[4] == (byte)0
 
 		isNewData = true;
 		return false;

@@ -398,8 +398,8 @@ public class Client {
 			
 			throw new ErrorException("received invalid data with #" + dataNumber, ILLEGAL_OPER_ERR_CODE);
 		}
-
-		if (dataPacket.getLength() < 512 || dataPacket.getData()[4] == (byte) 0) {
+		//|| dataPacket.getData()[4] == (byte) 0
+		if (dataPacket.getLength() < 512) {
 			transfering = false;
 		}
 
@@ -598,10 +598,11 @@ public class Client {
 						dataToSend = new byte[DATA_SIZE];
 					} else if (dataSize > 0) {
 						dataToSend = new byte[dataSize];
+					} else{
+						dataToSend = new byte[dataSize];
 					}
 
 					sizeOfDataRead = in.read(dataToSend);
-					System.out.println(sizeOfDataRead);
 					if (sizeOfDataRead < 512) {
 						transfering = false;
 					}
@@ -616,8 +617,6 @@ public class Client {
 				dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
 				dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
-				System.out.println("packlen: "+dataForPacket.length);
-				System.out.println("packlen: "+dataToSend.length);
 				// Copy the data from the file into the packet data
 				if (sizeOfDataRead >0) {
 					System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);

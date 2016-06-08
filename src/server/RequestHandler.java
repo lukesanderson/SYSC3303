@@ -23,7 +23,7 @@ public class RequestHandler {
 	protected boolean transfering = true;
 	protected boolean waitingForAck = true;
 
-	public static final String SERVER_DIRECTORY = System.getProperty("user.dir") + File.separator + "src"
+	protected String serverDir = System.getProperty("user.dir") + File.separator + "src"
 			+ File.separator + "server" + File.separator;
 
 	// to check for error 2
@@ -45,7 +45,7 @@ public class RequestHandler {
 	protected boolean resending = false;
 	protected boolean requestError = false;
 
-	public RequestHandler(DatagramPacket request, Server parent) {
+	public RequestHandler(DatagramPacket request, Server parent, String dir) {
 
 		try {
 			inOutSocket = new DatagramSocket();
@@ -57,6 +57,7 @@ public class RequestHandler {
 
 		clientPort = request.getPort();
 		clientAddress = request.getAddress();
+		serverDir = dir;
 
 		this.request = request;
 		parentServer = parent;
