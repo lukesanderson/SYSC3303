@@ -43,13 +43,9 @@ public class RequestHandler {
 	protected int timeout = 0;
 	protected int currentBlock = 1;
 	protected boolean resending = false;
+	protected boolean requestError = false;
 
 	public RequestHandler(DatagramPacket request, Server parent) {
-		this.request = request;
-		parentServer = parent;
-
-		clientPort = request.getPort();
-		clientAddress = request.getAddress();
 
 		try {
 			inOutSocket = new DatagramSocket();
@@ -57,6 +53,20 @@ public class RequestHandler {
 		} catch (SocketException e) {
 			System.out.println("Request Handler: " + "Unable to create a socket to handle request");
 			e.printStackTrace();
+		}
+
+		clientPort = request.getPort();
+		clientAddress = request.getAddress();
+
+		this.request = request;
+		parentServer = parent;
+
+		try {
+			verify(request.getData());
+
+		} catch (ErrorException e) {
+			requestError = true;
+			handleError(e);
 		}
 
 	}
@@ -80,6 +90,64 @@ public class RequestHandler {
 			filename += g;
 		}
 		return filename;
+	}
+
+	/**
+	 * Method to retrieve the mode string for the verification method
+	 * 
+	 * @param data
+	 * @return string modeType
+	 */
+	protected String getMode(byte[] data) {
+
+		String modeType = ""; // hold string of mode
+		int modeStart = getFileName(data).length() + 3; // holds were the mode
+														// starts
+
+		for (int i = modeStart; i < data.length; i++) {
+
+			if (data[i] == (byte) 0) {
+				break;
+			}
+
+			char g = (char) data[i];
+			modeType += g;
+		}
+		return modeType;
+	}
+
+	protected boolean verify(byte[] dataToCheck) throws ErrorException {
+
+		int fileNameLength = getFileName(dataToCheck).length(); // holds the
+																// length of the
+																// filename, add
+																// 3 to get to
+																// null char
+																// separator
+		int modeStart = fileNameLength + 3;
+		int modeEnd = getMode(dataToCheck).length() + modeStart;// stores the end of the
+													// mode
+
+		// check if there is a null character between the mode and filename
+		if (dataToCheck[fileNameLength + 2] == 0) {
+
+			if (getMode(dataToCheck).equalsIgnoreCase("netascii") || (getMode(dataToCheck).equalsIgnoreCase("octet"))) {
+
+				if (dataToCheck[modeEnd + 1] == 0) {
+					return true;
+				} else {
+					throw new ErrorException("Recieved incorrect format: no null between mode and data",
+							ILLEGAL_OPER_ERR_CODE);
+				}
+
+			} else {
+				throw new ErrorException("Recieved incorrect mode field", ILLEGAL_OPER_ERR_CODE);
+			}
+
+		} else {
+			throw new ErrorException("Recieved incorrect format: no null between filename and mode",
+					ILLEGAL_OPER_ERR_CODE);
+		}
 	}
 
 	protected DatagramPacket buildError(byte[] errMessage, int errCode) {

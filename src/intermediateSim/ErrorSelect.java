@@ -22,7 +22,7 @@ public class ErrorSelect {
 	public boolean verboseMode = true;
 	public InetAddress serverAddress = null;
 	private static final Scanner READER = new Scanner(System.in);
-	
+	public boolean firstPacket = false;
 	/**
      * Validates the IP address passed is of valid format
      * (ie XXX.XXX.XXX.XXX where values are not exceeded).
@@ -129,6 +129,7 @@ public class ErrorSelect {
 		// selects block, loops until a valid number selected
 		System.out.println("Please enter the block number");
 		while (true) {
+			
 			try {
 				blockNum = Integer.parseInt(READER.nextLine());
 			} catch (NumberFormatException n) {
@@ -143,7 +144,7 @@ public class ErrorSelect {
 		System.out.println("01: Lose the packet\n");
 		System.out.println("02: Delay a packet\n");
 		System.out.println("03: Duplicate a packet\n");
-		System.out.println("04: create invalid TFTP opcode\n");
+		System.out.println("04: corrupt the packet\n");
 		System.out.println("05: create an unknown transfer ID\n");
 		while (mode == -1) {
 			String modeSelected = READER.nextLine(); // reads the input String
@@ -178,16 +179,21 @@ public class ErrorSelect {
 				System.out.println("01: corrupt the Opcode");
 				System.out.println("02: corrupt the block number");
 				System.out.println("03: send as opposite operation (i.e if its an ACK, send as data)");
+				System.out.println("04: corrupt the mode (netascii or octet)");
 				while(corruption == -1){
 					String corrupt = READER.nextLine(); // reads the input String
-					if (corrupt.equalsIgnoreCase("01")){
+					if (corrupt.equalsIgnoreCase("01")){ //opcode corrupt
 						corruption = 1;
 					}
 					else if(corrupt.equalsIgnoreCase("02")){ //block corrupt
 						corruption = 2;
 					}
-					else if(corrupt.equalsIgnoreCase("03")){ //change mode
+					else if(corrupt.equalsIgnoreCase("03")){ //change ACK or DATA
 						corruption = 3;
+					}
+					else if(corrupt.equalsIgnoreCase("04")){ //change mode
+						corruption = 4;
+						firstPacket = true;
 					}
 					else{
 						System.out.println("invalid choice. Please try again.");
