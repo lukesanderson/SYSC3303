@@ -75,7 +75,7 @@ public class Client {
 	private boolean newDir = false;
 	private static boolean verboseMode = true;
 	private VerboseQuiet vq = new VerboseQuiet(verboseMode);
-	
+
 	private File theFile;
 
 	public Client() {
@@ -102,12 +102,18 @@ public class Client {
 										// from the user
 
 		// activate quiet or verbose mode
-		System.out.println("Start in (q)uiet or (v)erbose");
-		String isVerbose = input.nextLine();
-		if (isVerbose.equalsIgnoreCase("v")) {
-			verboseMode = true;
-		} else if (isVerbose.equalsIgnoreCase("q")) {
-			verboseMode = false;
+		while (true) {
+			System.out.println("Start in (q)uiet or (v)erbose");
+			String isVerbose = input.nextLine();
+			if (isVerbose.equalsIgnoreCase("v")) {
+				verboseMode = true;
+			} else if (isVerbose.equalsIgnoreCase("q")) {
+				verboseMode = false;
+			} else {
+				System.out.println("Improper input");
+				continue;
+			}
+			break;
 		}
 
 		while (testingMode == false) {
@@ -274,17 +280,21 @@ public class Client {
 			}
 		} catch (ReceivedErrorException e) {
 			receivedError(e);
-			if(request == Decision.RRQ){
-				theFile.deleteOnExit();
+			
+			if (request == Decision.RRQ) {
+				writer.close();
+				theFile.delete();
 			}
 		}
 
 		catch (ErrorException e) {
 			handleError(e);
-			if(request == Decision.RRQ){
-				theFile.deleteOnExit();
-			}
 			
+			if (request == Decision.RRQ) {
+				writer.close();
+				theFile.delete();
+			}
+
 		}
 	}
 
@@ -357,8 +367,6 @@ public class Client {
 		int opcode = ((dataPacket.getData()[0] & 0xff) << 8) | (dataPacket.getData()[1] & 0xff);
 		int dataNumber = ((dataPacket.getData()[2] & 0xff) << 8) | (dataPacket.getData()[3] & 0xff);
 
-		byte[] data = dataPacket.getData();
-
 		InetAddress dataAddress = dataPacket.getAddress();
 		int dataPort = dataPacket.getPort();
 
@@ -387,10 +395,11 @@ public class Client {
 			return false;
 			// ignore and send next data
 		} else if (dataNumber > currentBlock) {
+			
 			throw new ErrorException("received invalid data with #" + dataNumber, ILLEGAL_OPER_ERR_CODE);
 		}
 
-		if (dataPacket.getLength() < 512) {
+		if (dataPacket.getLength() < 512 || dataPacket.getData()[4] == (byte) 0) {
 			transfering = false;
 		}
 
@@ -456,7 +465,7 @@ public class Client {
 		serverPort = dataPacket.getPort();
 
 		// write data
-		if (resending == false) {
+		if (resending == false && isNewData && dataPacket.getData()[4] != 0) {
 			writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 		}
 
@@ -592,6 +601,10 @@ public class Client {
 					}
 
 					sizeOfDataRead = in.read(dataToSend);
+					System.out.println(sizeOfDataRead);
+					if (sizeOfDataRead < 512) {
+						transfering = false;
+					}
 				} catch (IOException e) {
 					throw new ErrorException("Failed getting data to send", 0);
 				}
@@ -603,8 +616,10 @@ public class Client {
 				dataForPacket[2] = (byte) ((currentBlock >> 8) & 0xFF);
 				dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
+				System.out.println("packlen: "+dataForPacket.length);
+				System.out.println("packlen: "+dataToSend.length);
 				// Copy the data from the file into the packet data
-				if (dataForPacket.length > 4) {
+				if (sizeOfDataRead >0) {
 					System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 				}
 			}
@@ -650,11 +665,6 @@ public class Client {
 
 			if (resending == false) {
 				currentBlock++;
-			}
-
-			if (sizeOfDataRead < 512) {
-				// Transferring should end
-				transfering = false;
 			}
 
 		}
@@ -804,7 +814,7 @@ public class Client {
 	}
 
 	public void exit() {
-		
+
 		sendReceiveSocket.close();
 	}
 }

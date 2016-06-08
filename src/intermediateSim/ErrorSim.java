@@ -41,6 +41,8 @@ public class ErrorSim implements Runnable {
 	private boolean newError = true;
 	private InetAddress serverIP;
 	private InetAddress clientIP;
+	private boolean corruptFirst = false;
+	private ErrorSelect eS;
 	/**
 	 * Constructor for the ErrorSim that is passed the initial packet and client port,
 	 * as well as the user input need to select which error to create.	
@@ -58,6 +60,9 @@ public class ErrorSim implements Runnable {
 		this.mode = eS.mode; //Holds the type of error the user wants to create
 		this.corruption = eS.corruption;
 		this.serverIP = eS.serverAddress;
+		this.corruptFirst = eS.firstPacket;
+		this.eS = eS;
+		
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		} catch (SocketException se) {
@@ -127,15 +132,13 @@ public class ErrorSim implements Runnable {
 					serverIP, serverPort);
 			currentPort = "client";
 		}
-		
-		
+		if(eS.verboseMode){
 		System.out.println("received packet from " + currentPort + " containing:");
 		for (byte b : receivePacket.getData()) {
 			System.out.print(b);
 		}
 		System.out.println();
-
-		
+		}
 		//Checks if the packet is Data packet, and the block number we want,
 		//then generates the selected error if we wanted to.
 		if (blockNumber == blockNum && opcode == DATA && opCode == 02 && newError) {
@@ -148,7 +151,7 @@ public class ErrorSim implements Runnable {
 			} else if (mode == 02) {
 				System.out.println("Delayed the packet for 2.5 seconds"); //Delay the packet 2.5 seconds
 				Delay(receivePacket);
-			} else if(mode == 04){
+			} else if(mode == 04 && corruption != 4){
 				System.out.println("Corrupting the packet of block#: " + blockNum);
 				receivePacket = newMode(receivePacket, corruption); //Change the mode to simulate an invalid opcode
 				sendPacket(receivePacket);
@@ -173,7 +176,7 @@ public class ErrorSim implements Runnable {
 			} else if (mode == 02) {
 				System.out.println("Delayed the packet for 2.5 seconds");
 				Delay(receivePacket);
-			} else if(mode == 04){
+			} else if(mode == 04 && corruption != 4){
 				System.out.println("Corrupting the packet of block#: " + blockNum);
 				receivePacket = newMode(receivePacket, corruption);
 				sendPacket(receivePacket);
@@ -188,9 +191,6 @@ public class ErrorSim implements Runnable {
 		} else { //If it is not the packet we are looking to change, send it normally
 			sendPacket(receivePacket);
 		}
-		
-		
-		
 		return true;
 	}
 
@@ -222,7 +222,21 @@ public class ErrorSim implements Runnable {
 				packetData[1] = 3;
 			}
 		}
-		receivedPacket.setData(packetData);//length of packet
+		else if(corruption == 4){
+			
+			for (int i = 2; i < packetData.length; i++) {
+				if (packetData[i] == (byte) 0) {
+					int x = i + 1;
+					for (int y = x; y < packetData.length; y++) {
+						if (packetData[y] == (byte) 0) {
+							break;
+						}
+						packetData[y] = 9;
+						}
+					}
+				}
+		}
+		receivedPacket.setData(packetData);//length of packet	
 		return receivedPacket;
 	}
 	
@@ -245,9 +259,11 @@ public class ErrorSim implements Runnable {
 		}
 		try{
 			errorSocket.receive(packet);
+			if(eS.verboseMode){
 			System.out.println("received error packet containing: ");
 			for (byte b : packet.getData()) {
 				System.out.print(b);
+			}
 			}
 		}catch (IOException e){
 			System.out.println("IO exception while attempting to receive error packet");
@@ -265,7 +281,9 @@ public class ErrorSim implements Runnable {
 		}
 		try {
 			sendReceiveSocket.send(packet);
+			if(eS.verboseMode){
 			System.out.println("sent packet to " + sentPacket);
+			}
 		} catch (IOException e) {
 			System.out.println("IO exception while attempting to send packet");
 		}
@@ -277,8 +295,14 @@ public class ErrorSim implements Runnable {
 		// Create the datagram packet for the request
 	   DatagramPacket initialRequest = new DatagramPacket(initPacket.getData(), initPacket.getLength(),
 			serverIP, INITIAL_SERVER_PORT);
-		sendPacket(initialRequest);
-
+	   if(corruptFirst){
+		   System.out.println("corrupting initial packet");
+		   initialRequest = newMode(initialRequest, 4);
+		   sendPacket(initialRequest);
+	   }
+	   else{
+		   sendPacket(initialRequest);
+	   }
 		// Loop until the send and receive method is finished
 		boolean cont = true;
 		while (cont) {

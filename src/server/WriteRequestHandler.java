@@ -70,6 +70,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 					dataPacket = receiveData();
 					receivedData = true;
 
+					vQ.printThis(parentServer.isVerbose(), "Received: \n");
 					vQ.printThis2(parentServer.isVerbose(), dataPacket);
 
 				} catch (SocketTimeoutException e) {
@@ -95,7 +96,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			freeSpace -= dataPacket.getLength() - 4;
 
 			// write block
-			if (resending == false && isNewData) {
+			if (resending == false && isNewData && dataPacket.getData()[4] != 0) {
 				timeout = 0;
 				writer.write(dataPacket.getData(), 4, dataPacket.getLength() - 4);
 			}
@@ -104,7 +105,9 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			if (receivedData == true) {
 				ackPacket = buildAckPacket(receivedNumber);
 				inOutSocket.send(ackPacket);
+				vQ.printThis(parentServer.isVerbose(), "Sent: \n");
 				vQ.printThis2(parentServer.isVerbose(), ackPacket);
+				
 				receivedData = false;
 			}
 			if (resending == false) {
@@ -194,7 +197,7 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			throw new ErrorException("received data from the future", ILLEGAL_OPER_ERR_CODE);
 		}
 
-		if (dataPacket.getLength() < 512) {
+		if (dataPacket.getLength() < 512 || dataPacket.getData()[4] == (byte)0) {
 			transfering = false;
 		}
 
@@ -205,6 +208,9 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 	@Override
 	public void run() {
+		if(!requestError){
+			
+		
 		try {
 			writeRequest();
 		} catch (IOException e) {
@@ -213,12 +219,13 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			e.printStackTrace();
 		} catch (ReceivedErrorException e) {
 			receivedError(e);
-			theFile.deleteOnExit();
+			theFile.delete();
 		} catch (ErrorException e) {
 			handleError(e);
-			theFile.deleteOnExit();
+			
+			theFile.delete();
 		}
-
+		}
 		inOutSocket.close();
 		parentServer.threadClosed();
 

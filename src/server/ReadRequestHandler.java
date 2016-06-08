@@ -64,12 +64,13 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 				if (dataSize >= DATA_SIZE) {
 					dataToSend = new byte[DATA_SIZE];
-				} else if (dataSize > 0) {
+				} else if (dataSize >= 0) {
 					dataToSend = new byte[dataSize];
+					
 				}
 
 				sizeOfDataRead = in.read(dataToSend);
-
+				
 				dataForPacket = new byte[4 + dataToSend.length];
 				dataForPacket[0] = 0;
 				dataForPacket[1] = 3;
@@ -78,7 +79,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 				dataForPacket[3] = (byte) (currentBlock & 0xFF);
 
 				// Copy the data from the file into the packet data
-				if (dataForPacket.length > 4) {
+				if (sizeOfDataRead >0) {
 					System.arraycopy(dataToSend, 0, dataForPacket, 4, dataToSend.length);
 				}
 
@@ -97,7 +98,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			if (resending) {
 				resending = false;
 			}
-
+			vQ.printThis(parentServer.isVerbose(), "Sent: \n");
 			vQ.printThis2(parentServer.isVerbose(), dataPacket);
 
 			// Receive ack packet
@@ -125,7 +126,6 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 				currentBlock++;
 			}
 			if (sizeOfDataRead < 512) {
-				// Transferring should end
 				transfering = false;
 			}
 
@@ -200,21 +200,21 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 	}
 
 	public void run() {
+		if (!requestError) {
 
-		try {
-			readRequest();
-		} catch (ReceivedErrorException e) {
-			receivedError(e);
-		} catch (ErrorException e) {
+			try {
+				readRequest();
+			} catch (ReceivedErrorException e) {
+				receivedError(e);
+			} catch (ErrorException e) {
 
-			handleError(e);
-			
+				handleError(e);
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-
 		inOutSocket.close();
 		parentServer.threadClosed();
 
