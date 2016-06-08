@@ -39,8 +39,7 @@ public class ErrorInit {
 	 */
 	public void receiveAndEcho() {
 		int clientPort;
-		InetAddress clientIP;
-
+		/**
 		ErrorSelect eS = new ErrorSelect(); // The user input used to select
 											// which kind of error the user
 											// wants to simulate
@@ -53,7 +52,23 @@ public class ErrorInit {
 		}
 		VerboseQuiet vQ = new VerboseQuiet(eS.verboseMode);
 		vQ.printThis(true, "\nError Simulator started. Waiting to receive packet on port: " + INITIAL_SOCKET);
-		while (true) {
+		**/
+		
+		
+			ErrorSelect eS = new ErrorSelect(); // The user input used to select
+			// which kind of error the user
+			// wants to simulate
+
+			try {
+				eS.menu();
+			} catch (IOException e1) {
+				System.out.println("IOException while trying to receive user input");
+				e1.printStackTrace();
+			}
+			VerboseQuiet vQ = new VerboseQuiet(eS.verboseMode);
+			vQ.printThis(true, "\nError Simulator started. Waiting to receive packet on port: " + INITIAL_SOCKET);
+			
+			
 			// Create the receive packet for the request
 			byte data[] = new byte[DEFAULT_PACKET_SIZE];
 			DatagramPacket receivePacket = new DatagramPacket(data, data.length);
@@ -63,22 +78,20 @@ public class ErrorInit {
 				receiveSocket.receive(receivePacket);
 			} catch (IOException e) {
 				System.out.println("Exception on receive socket");
-				break;
+				
 			}
 			// Process the received datagram.
 			vQ.printThis(false, "\nPacket received from host.");
 			vQ.printThis(false, "\nHost address: " + receivePacket.getAddress());
 			clientPort = receivePacket.getPort();
-			clientIP = receivePacket.getAddress();
 			vQ.printThis(false, "\nHost port: " + clientPort);
-			vQ.printThis(false, "\nIP address: " + clientIP);
 			vQ.printThis(false, "\nLength: " + receivePacket.getLength());
 			vQ.printThis(false, "\nContaining: \n");
 			// vQ.printThis(false, new String(receivePacket.getData()));
 
 			if (eS.verboseMode) {
 				for (int j = 0; j < receivePacket.getLength(); j++) {
-					System.out.println("byte " + j + " " + data[j]);
+					System.out.print(data[j]);
 				}
 			}
 
@@ -86,7 +99,9 @@ public class ErrorInit {
 			System.out.println("\nCreating new Error Simulator Thread to handle request");
 			Thread t = new Thread(new ErrorSim(receivePacket, READER, eS));
 			t.start();
-		}
+		
+			
+		
 
 		READER.close();
 		receiveSocket.close();

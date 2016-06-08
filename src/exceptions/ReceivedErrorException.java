@@ -20,29 +20,24 @@ public class ReceivedErrorException extends ErrorException {
 		byte[] messageBytes = new byte[errPacket.getLength()];
 
 		
-		
-		
+		errCode = ((errPacket.getData()[2] & 0xff) << 8) | (errPacket.getData()[3] & 0xff);
+		if(!validateErr()){
+			System.out.println("Received Unexpected error code");
+		}
 		System.arraycopy(errPacket.getData(), 4, messageBytes, 0, errPacket.getLength()-4);
 		
 		
-		// System.out.println("error message in bytes: ");
-		// for(byte b : messageBytes){
-		// System.out.print(b);
-		// }
-		// System.out.println();
-		//
-		// System.out.println("error message in char: ");
-		// for(byte b : messageBytes){
-		// System.out.print((char)b);
-		// }
-		// System.out.println();
-
 
 		this.message = new String(messageBytes);
 	}
-
-	// public String getMessage() {
-	// return this.message;
-	// }
-
+	
+	
+	private boolean validateErr(){
+		for(int i = 0; i <=7;i++){
+			if(i == errCode){
+				return true;
+			}
+		}
+		return false;
+	}
 }

@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
@@ -38,7 +39,6 @@ public class ErrorSim implements Runnable {
 	private int mode;
 	private int corruption;
 	private boolean newError = true;
-	private String serverAddress;
 	private InetAddress serverIP;
 	private InetAddress clientIP;
 	/**
@@ -57,21 +57,14 @@ public class ErrorSim implements Runnable {
 		this.opCode = eS.OpCode; //Holds the user input for Ack or DATA
 		this.mode = eS.mode; //Holds the type of error the user wants to create
 		this.corruption = eS.corruption;
-		this.serverAddress = eS.serverAddress;
+		this.serverIP = eS.serverAddress;
 		try {
 			sendReceiveSocket = new DatagramSocket();
-			
 		} catch (SocketException se) {
 			System.out.println("Socket Exception on ErrorSim");
 			System.exit(1);
 		}
-		try {
-			serverIP = InetAddress.getByName(serverAddress);
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			System.out.println("Unknown host exception");
-			System.exit(1);
-		}
+		
 		
 	}
 
@@ -101,14 +94,19 @@ public class ErrorSim implements Runnable {
 		// Waits until a new packet is received
 		try {
 			sendReceiveSocket.receive(receivePacket);
+			sendReceiveSocket.setSoTimeout(6500);
 		} catch (IOException e) {
+			if(e instanceof SocketTimeoutException){
+				System.out.println("No more packets detected.");
+				return false;
+			}else{
 			System.out.println("IO exception while attempting to receive packet");
-			System.exit(1);
-		
+			}
+			
 		}
 		//Creates a byte array to parse the packet for opcode and block number
 		byte[] packetData = receivePacket.getData();
-		
+	
 		int opcode = ((packetData[0] & 0xff) << 8) | (packetData[1] & 0xff);
 		int blockNumber = ((packetData[2] & 0xff) << 8) | (packetData[3] & 0xff);
 
@@ -117,16 +115,25 @@ public class ErrorSim implements Runnable {
 			serverPort = receivePacket.getPort();
 		}
 		
-		
+		String currentPort;
 		// Passes the packet from server to client, and client to server.
 		// Creates a new packet with the correct destination address
 		if (receivePacket.getPort() == serverPort) {
 			receivePacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(),
 					clientIP, clientPort);
+			currentPort = "server";
 		} else {
 			receivePacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(),
 					serverIP, serverPort);
+			currentPort = "client";
 		}
+		
+		
+		System.out.println("received packet from " + currentPort + " containing:");
+		for (byte b : receivePacket.getData()) {
+			System.out.print(b);
+		}
+		System.out.println();
 
 		
 		//Checks if the packet is Data packet, and the block number we want,
@@ -142,12 +149,12 @@ public class ErrorSim implements Runnable {
 				System.out.println("Delayed the packet for 2.5 seconds"); //Delay the packet 2.5 seconds
 				Delay(receivePacket);
 			} else if(mode == 04){
+				System.out.println("Corrupting the packet of block#: " + blockNum);
 				receivePacket = newMode(receivePacket, corruption); //Change the mode to simulate an invalid opcode
 				sendPacket(receivePacket);
-				System.out.println("Opcode has been altered");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
-				System.out.println("Sent from an invalid ID"); //Send from a different socket
+				System.out.println("/nSent from an invalid ID"); //Send from a different socket
 			}else { //send normally
 				sendPacket(receivePacket);
 			}
@@ -167,19 +174,22 @@ public class ErrorSim implements Runnable {
 				System.out.println("Delayed the packet for 2.5 seconds");
 				Delay(receivePacket);
 			} else if(mode == 04){
+				System.out.println("Corrupting the packet of block#: " + blockNum);
 				receivePacket = newMode(receivePacket, corruption);
 				sendPacket(receivePacket);
-				System.out.println("Opcode has been altered.");
 			}else if(mode == 05){
 				sendErrorPacket(receivePacket);
-				System.out.println("Sent from an invalid ID.");
+				System.out.println("/nSent from an invalid ID.");
 			} else { //send normally
 				sendPacket(receivePacket);
 			}
 			newError = false;
+			
 		} else { //If it is not the packet we are looking to change, send it normally
 			sendPacket(receivePacket);
 		}
+		
+		
 		
 		return true;
 	}
@@ -196,14 +206,15 @@ public class ErrorSim implements Runnable {
 	 */
 	private DatagramPacket newMode(DatagramPacket receivedPacket, int corruption){
 		byte[] packetData = receivedPacket.getData();
-		if(corruption == 1){
+		if(corruption == 1){ //opcode
 		packetData[0] = 9;
 		packetData[1] = 9;
 		}
-		//else if(corruption == 2){
-			//System.arraycopy(packetData, 3, packetData, 50, 600);
-		//}
-		else if(corruption == 3){
+		else if(corruption == 2){ //block num
+		packetData[2] = -1;
+		packetData[3] = 9;
+		}
+		else if(corruption == 3){ //change mode
 			if (packetData[1] == 3){
 				packetData[1] = 4;
 			}
@@ -211,10 +222,7 @@ public class ErrorSim implements Runnable {
 				packetData[1] = 3;
 			}
 		}
-		//else if(corruption == 4){
-			//packetData = null;
-		//}
-		receivedPacket.setData(packetData);
+		receivedPacket.setData(packetData);//length of packet
 		return receivedPacket;
 	}
 	
@@ -235,14 +243,29 @@ public class ErrorSim implements Runnable {
 		} catch (IOException e) {
 			System.out.println("IO exception while attempting to send error packet");
 		}
-		
+		try{
+			errorSocket.receive(packet);
+			System.out.println("received error packet containing: ");
+			for (byte b : packet.getData()) {
+				System.out.print(b);
+			}
+		}catch (IOException e){
+			System.out.println("IO exception while attempting to receive error packet");
+		}
 		errorSocket.close();
 	}
-	
+	String sentPacket = "server";
 	// used to send packets from the ErrorSim
 	public void sendPacket(DatagramPacket packet) {
+		
+		if(packet.getPort() == serverPort){
+			sentPacket = "server";
+		}else if(packet.getPort() == clientPort){
+			sentPacket = "client";
+		}
 		try {
 			sendReceiveSocket.send(packet);
+			System.out.println("sent packet to " + sentPacket);
 		} catch (IOException e) {
 			System.out.println("IO exception while attempting to send packet");
 		}
@@ -265,6 +288,8 @@ public class ErrorSim implements Runnable {
 		
 		// Operation finished, close the socket.
 		sendReceiveSocket.close();
+		System.out.println("Transfer has finished.");
+		
 		
 	}
 

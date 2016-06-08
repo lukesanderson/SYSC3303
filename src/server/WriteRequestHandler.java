@@ -12,8 +12,12 @@ import java.net.SocketTimeoutException;
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 
+import server.VerboseQuiet;
+
 public class WriteRequestHandler extends RequestHandler implements Runnable {
 	private boolean isNewData = true;
+	
+	private File theFile;
 
 	public WriteRequestHandler(DatagramPacket request, Server parent) {
 		super(request, parent);
@@ -24,12 +28,14 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		String filename = getFileName(request.getData());
 
-		File newFile = new File(SERVER_DIRECTORY + filename);
+		theFile = new File(SERVER_DIRECTORY + filename);
 		File directory = new File(SERVER_DIRECTORY);
 		long freeSpace = directory.getFreeSpace();
 
+		VerboseQuiet vQ = new VerboseQuiet(parentServer.isVerbose());
+
 		// Check if file is already here
-		if (newFile.exists()) {
+		if (theFile.exists()) {
 			System.out.println("Client tried to write to " + filename + " which already exists");
 			throw new ErrorException(filename + " already found on system", FILE_EXISTS_CODE);
 		}
@@ -41,25 +47,20 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 		DatagramPacket ackPacket = buildAckPacket(0);
 		inOutSocket.send(ackPacket);
 
-		System.out.println("sent initial: ");
+		vQ.printThis(parentServer.isVerbose(), "sent intial: \n");
+		vQ.printThis2(parentServer.isVerbose(), ackPacket);
 
-		for (byte b : ackPacket.getData()) {
-			System.out.print(b);
-		}
-
-		System.out.println();
-
-		newFile.createNewFile();
+		theFile.createNewFile();
 
 		BufferedOutputStream writer = null;
 
 		try {
-			writer = new BufferedOutputStream(new FileOutputStream(newFile));
+			writer = new BufferedOutputStream(new FileOutputStream(theFile));
 		} catch (Exception e) {
 			System.out.println("Client tried to write to read only space");
 			throw new ErrorException("You are trying to write to a read only space", ACCESS_DENIED_CODE);
 		}
-		
+
 		do {
 			boolean receivedData = false;
 			// receive and validate data
@@ -67,13 +68,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 				try {
 					// Receive data packet
 					dataPacket = receiveData();
-					System.out.println("\nReceived: ");
 					receivedData = true;
-					for (byte b : dataPacket.getData()) {
-						System.out.print(b);
-					}
 
-					System.out.println();
+					vQ.printThis2(parentServer.isVerbose(), dataPacket);
+
 				} catch (SocketTimeoutException e) {
 					System.out.println("Timeout receiving Data " + currentBlock + ", Waiting for data again. ");
 					timeout++;
@@ -103,14 +101,11 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			}
 
 			// Build ack
-			if(receivedData == true){
-			ackPacket = buildAckPacket(receivedNumber);
-			inOutSocket.send(ackPacket);
-			System.out.println("\nsent: ");
-			for (byte b : ackPacket.getData()) {
-				System.out.print(b);
-			}
-			receivedData = false;
+			if (receivedData == true) {
+				ackPacket = buildAckPacket(receivedNumber);
+				inOutSocket.send(ackPacket);
+				vQ.printThis2(parentServer.isVerbose(), ackPacket);
+				receivedData = false;
 			}
 			if (resending == false) {
 				currentBlock++;
@@ -179,6 +174,10 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 
 		// Check Address and port
 		if (dataPort != clientPort || !dataAddress.equals(clientAddress)) {
+
+			System.out.println("Received packet from an unknown host");
+			System.out.println("IP: " + dataAddress + " port: " + dataPort);
+
 			sendUnknownIDError(dataAddress, dataPort);
 			return true;
 		}
@@ -213,28 +212,11 @@ public class WriteRequestHandler extends RequestHandler implements Runnable {
 			System.out.println("Caught IOException");
 			e.printStackTrace();
 		} catch (ReceivedErrorException e) {
-			System.out.println("\nReceived error packet.");
-			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
-			// q.delete();
-			System.out.println(e.getMessage());
+			receivedError(e);
+			theFile.deleteOnExit();
 		} catch (ErrorException e) {
-
-			// Build the error
-			DatagramPacket err = buildError(e.getMessage().getBytes(), e.getErrorCode());
-
-			// set port and address
-			err.setAddress(clientAddress);
-			err.setPort(clientPort);
-
-			// Send error
-			try {
-				inOutSocket.send(err);
-			} catch (IOException e1) {
-				// TODO error sending Error packet
-				e1.printStackTrace();
-			}
-			File q = new File(SERVER_DIRECTORY + getFileName(request.getData()));
-			// q.delete();
+			handleError(e);
+			theFile.deleteOnExit();
 		}
 
 		inOutSocket.close();
