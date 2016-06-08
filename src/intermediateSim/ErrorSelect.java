@@ -1,6 +1,8 @@
 package intermediateSim;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 /**
@@ -18,8 +20,7 @@ public class ErrorSelect {
 	private int vq = -1;
 	public int corruption = -1;
 	public boolean verboseMode = true;
-	public String serverAddress = null;
-	private boolean validIP = true;
+	public InetAddress serverAddress = null;
 	private static final Scanner READER = new Scanner(System.in);
 	
 	/**
@@ -61,18 +62,33 @@ public class ErrorSelect {
 
 		
 		System.out.println("Error Simulator \n");
-		//System.out.println("Your IP address is: " + Inet4Address.getAddress()[0]);
-
-		while (validIP == true) {
-			System.out.println("Please enter the server IP:");
-			serverAddress = READER.nextLine();
-			validIP = validateIPAddress(serverAddress);
+	
+		while (true) {
+			System.out.println("Please enter the server IP or hit 'Enter' to continue with local address.");
+			String serverIP = READER.nextLine();
+			if (serverIP.isEmpty()) {
+				serverAddress = InetAddress.getLocalHost();
+				System.out.println("Sending to local host");
+				break;
+			}
+			if (validateIPAddress(serverIP)) {
+				continue;
+			}
+			try {
+				serverAddress = InetAddress.getByName(serverIP);
+				System.out.println("sending to ip: "+serverIP);
+			} catch (UnknownHostException e) {
+				System.out.println("");
+			}
+			break;
+		
 		}
 		
-
+		
+		
 		
 		while (vq == -1) {
-			System.out.println("Would you like to run the ErrorSim in (v)erbose or (q)uiet mode?");
+			System.out.println("Would you like to run the ErrorSim in (V)erbose or (Q)uiet mode?");
 			String verbose = READER.nextLine();
 			if (verbose.equalsIgnoreCase("v")) {
 				verboseMode = true;
@@ -160,22 +176,18 @@ public class ErrorSelect {
 			if (mode == 04){
 				System.out.println("How would you like to corrupt the selected packet?");
 				System.out.println("01: corrupt the Opcode");
-				//System.out.println("02: corrupt the data");
+				System.out.println("02: corrupt the block number");
 				System.out.println("03: send as opposite operation (i.e if its an ACK, send as data)");
-				//System.out.println("04: Nullify the packet");
 				while(corruption == -1){
 					String corrupt = READER.nextLine(); // reads the input String
 					if (corrupt.equalsIgnoreCase("01")){
 						corruption = 1;
 					}
-					else if(corrupt.equalsIgnoreCase("02")){ //data corrupt
+					else if(corrupt.equalsIgnoreCase("02")){ //block corrupt
 						corruption = 2;
 					}
 					else if(corrupt.equalsIgnoreCase("03")){ //change mode
 						corruption = 3;
-					}
-					else if(corrupt.equalsIgnoreCase("04")){
-						corruption = 4;
 					}
 					else{
 						System.out.println("invalid choice. Please try again.");

@@ -11,6 +11,8 @@ import java.net.SocketTimeoutException;
 import exceptions.ErrorException;
 import exceptions.ReceivedErrorException;
 
+import server.VerboseQuiet;
+
 public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 	private int dataSize = 512;
@@ -32,6 +34,8 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		String filename = getFileName(request.getData());
 
 		File readFile = new File(SERVER_DIRECTORY + filename);
+
+		VerboseQuiet vQ = new VerboseQuiet(parentServer.isVerbose());
 
 		if (!readFile.exists()) {
 			System.out.println("Unable to find file " + filename);
@@ -86,20 +90,15 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			}
 			dataPacket = new DatagramPacket(dataForPacket, dataForPacket.length, clientAddress, clientPort);
 
-			System.out.println("sending data " + currentBlock + " of size: " + dataForPacket.length);
+			vQ.printThis(parentServer.isVerbose(),
+					"sending data " + currentBlock + " of size: " + dataForPacket.length + "\n");
 
 			inOutSocket.send(dataPacket);
 			if (resending) {
 				resending = false;
 			}
 
-			System.out.println("sent: ");
-
-			for (byte b : dataPacket.getData()) {
-				System.out.print(b);
-			}
-
-			System.out.println();
+			vQ.printThis2(parentServer.isVerbose(), dataPacket);
 
 			// Receive ack packet
 
@@ -107,15 +106,9 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 				try {
 					ackPacket = receiveAck();
 					int ackNum = ((ackPacket.getData()[2] & 0xff) << 8) | (ackPacket.getData()[3] & 0xff);
-					System.out.println("received ack " + ackNum);
-
-					System.out.println("received: ");
-
-					for (byte b : ackPacket.getData()) {
-						System.out.print(b);
-					}
-
-					System.out.println();
+					// verbose mode
+					vQ.printThis(parentServer.isVerbose(), "received ack " + ackNum + "\n");
+					vQ.printThis2(parentServer.isVerbose(), ackPacket);
 
 				} catch (SocketTimeoutException e) {
 					System.out.println("Timeout receiving ack " + currentBlock + " resending data ");
@@ -185,6 +178,10 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 
 		// Check Address and port
 		if (ackPort != clientPort || !ackAddress.equals(clientAddress)) {
+
+			System.out.println("Received packet from an unknown host");
+			System.out.println("IP: " + ackAddress + " port: " + ackPort);
+
 			sendUnknownIDError(ackAddress, ackPort);
 			return true;
 		}
@@ -195,8 +192,7 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 			return true;
 			// ignore and send next data
 		} else if (ackNumber > currentBlock) {
-			System.out.println("received ack from the future");
-			throw new ErrorException("received ack from the future", ILLEGAL_OPER_ERR_CODE);
+			throw new ErrorException("received invalid ack with # " + ackNumber, ILLEGAL_OPER_ERR_CODE);
 		}
 
 		return false;
@@ -208,24 +204,12 @@ public class ReadRequestHandler extends RequestHandler implements Runnable {
 		try {
 			readRequest();
 		} catch (ReceivedErrorException e) {
-			System.out.println("Received error packet. message: \n");
-			System.out.println(e.getErrorCode());
+			receivedError(e);
 		} catch (ErrorException e) {
 
-			// Build the error
-			DatagramPacket err = buildError(e.getMessage().getBytes(), e.getErrorCode());
+			handleError(e);
+			
 
-			// set port and address
-			err.setAddress(clientAddress);
-			err.setPort(clientPort);
-
-			// Send error
-			try {
-				inOutSocket.send(err);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

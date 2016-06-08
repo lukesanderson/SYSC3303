@@ -7,6 +7,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 
+import exceptions.ErrorException;
+import exceptions.ReceivedErrorException;
 import exceptions.UnknownIDException;
 
 public class RequestHandler {
@@ -21,11 +23,11 @@ public class RequestHandler {
 	protected boolean transfering = true;
 	protected boolean waitingForAck = true;
 
-	public static final String SERVER_DIRECTORY = System.getProperty("user.dir") + File.separator + "src" + File.separator + "server" + File.separator;
-	
+	public static final String SERVER_DIRECTORY = System.getProperty("user.dir") + File.separator + "src"
+			+ File.separator + "server" + File.separator;
 
-	//to check for error 2 
-	//protected static final String SERVER_DIRECTORY = "F:\\JunkDataToFill\\";
+	// to check for error 2
+	// protected static final String SERVER_DIRECTORY = "F:\\JunkDataToFill\\";
 	protected static final int PACKET_SIZE = 516;
 	protected static final int DATA_SIZE = 512;
 
@@ -103,6 +105,30 @@ public class RequestHandler {
 		// Set address to other a
 		err.setAddress(e.getAddress());
 		err.setPort(e.getPort());
+
+		// Send error
+		try {
+			inOutSocket.send(err);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+
+	protected void receivedError(ReceivedErrorException e) {
+		System.out.print("Received error with code: " + e.getErrorCode() + " from client. message: ");
+		System.out.println(e.getMessage());
+	}
+
+	protected void handleError(ErrorException e) {
+		// Build the error
+		DatagramPacket err = buildError(e.getMessage().getBytes(), e.getErrorCode());
+
+		// set port and address
+		err.setAddress(clientAddress);
+		err.setPort(clientPort);
+
+		System.out.println("Error " + e.getErrorCode() + ": " + e.getMessage());
 
 		// Send error
 		try {
